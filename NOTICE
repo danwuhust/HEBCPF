@@ -1,0 +1,74 @@
+HEBCPF Third-Party Notices
+==========================
+
+HEBCPF depends on MATPOWER at runtime. The solver calls MATPOWER functions
+including, but not limited to, `runpf`, `makeYbus`, `idx_bus`, and `idx_brch`.
+MATPOWER must be installed separately and added to the MATLAB path.
+
+MATPOWER:
+  https://matpower.org
+  https://github.com/MATPOWER/matpower
+
+MATPOWER is distributed by its authors under its own license terms. Users
+should consult the MATPOWER distribution for the authoritative license text.
+
+MATPOWER-Format Case Files
+--------------------------
+
+This repository includes bundled `case*.m` test systems in MATPOWER case
+format. Several case files are copied from, derived from, or modified from
+MATPOWER cases, as indicated by the per-file comments. Some case data may
+originate from third-party public test-system sources and may carry separate
+attribution or usage requirements.
+
+Known MATPOWER-derived or MATPOWER-format cases include files such as:
+
+  case3.m
+  case4BB0.m
+  case4BBc.m
+  case4gs.m
+  case5loop.m
+  case5Salam.m
+  case6ww.m
+  case7Salam.m
+  case9.m
+  case9Q.m
+  case14mod.m
+  case14mod2.m
+  case30.m
+  case_ieee30.m
+  case33bw.m
+  case39.m
+  case57.m
+  case57mod.m
+  case118.m
+  case300.m
+
+The case files are provided for testing, validation, and reproducibility of
+the HEBCPF solver suite. Please preserve the comments and attribution notices
+inside the individual case files when redistributing modified versions.
+
+MATPOWER makeYbus
+-----------------
+
+Earlier internal copies of this project included a local `makeY.m` based on
+MATPOWER's `makeYbus.m`. That local copy has been removed. Current HEBCPF
+code calls MATPOWER's installed `makeYbus` directly instead of redistributing
+the function.
+
+MEX Binaries
+------------
+
+The MEX releases include precompiled Windows 64-bit MATLAB `.mexw64` files for
+selected hot-path routines. They are provided for convenience. Users on other
+platforms should rebuild them with `build_mex` and MATLAB Coder, or use one of
+the pure MATLAB releases.
+
+Citation
+--------
+
+If you use HEBCPF results, please cite:
+
+  D. Wu and B. Wang, "Holomorphic Embedding Based Continuation Method for
+  Identifying Multiple Power Flow Solutions," IEEE Access, vol. 7,
+  pp. 86843-86853, 2019. doi: 10.1109/ACCESS.2019.2925384.

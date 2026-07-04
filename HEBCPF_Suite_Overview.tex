@@ -1,0 +1,380 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[hidelinks,colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
+\usepackage[strings]{underscore}
+\usepackage{xurl}
+\newcommand{\doi}[1]{\href{https://doi.org/#1}{\nolinkurl{#1}}}
+
+\definecolor{codebg}{RGB}{245,245,248}
+\definecolor{rule}{RGB}{40,60,120}
+\definecolor{v2col}{RGB}{150,75,0}
+\definecolor{v3col}{RGB}{0,90,40}
+\definecolor{okgreen}{RGB}{0,120,50}
+\definecolor{warnamber}{RGB}{170,110,0}
+
+\lstdefinestyle{sh}{basicstyle=\ttfamily\small,backgroundcolor=\color{codebg},frame=single,
+  rulecolor=\color{rule!30},breaklines=true,columns=fullflexible,keepspaces=true,
+  showstringspaces=false,xleftmargin=8pt,aboveskip=6pt,belowskip=6pt}
+\lstset{style=sh}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\yes}{\textcolor{okgreen}{\textbf{yes}}}
+\newcommand{\no}{\textcolor{warnamber}{no}}
+
+\pagestyle{fancy}\fancyhf{}
+\lhead{\small HEBCPF Solver Suite}\rhead{\small Overview \& Selection Guide}
+\cfoot{\small\thepage}\renewcommand{\headrulewidth}{0.4pt}
+
+\setlength{\parskip}{4pt}\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% ===================== TITLE =====================
+\begin{titlepage}
+\centering
+\vspace*{2.0cm}
+{\color{rule}\rule{\textwidth}{1.2pt}}\\[8pt]
+{\Huge\bfseries HEBCPF Solver Suite}\\[10pt]
+{\LARGE Overview and Version Selection Guide}\\[10pt]
+{\color{rule}\rule{\textwidth}{1.2pt}}\\[16pt]
+{\large\itshape Finding \emph{all} real-valued solutions of the AC power-flow equations}\\[4pt]
+{\large\itshape Ellipsoidal Formulation + Holomorphic Embedding + Pad\'e + Numerical Continuation}\\[26pt]
+
+{\large This guide compares the \textbf{four} packaged releases and helps you pick one.}\\[18pt]
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+Release folder & Orientation\\
+\midrule
+\code{HEBCPF_MEX_v3.202606}    & Robustness-oriented, compiled --- hardened config, Windows x64\\
+\code{HEBCPF_matlab_v3.202606} & Robustness-oriented, portable --- hardened config, any OS\\
+\code{HEBCPF_MEX_v2.202607}    & Efficiency-oriented, compiled --- legacy-fast config, Windows x64\\
+\code{HEBCPF_matlab_v2.202607} & Efficiency-oriented, portable --- legacy-fast config, any OS\\
+\bottomrule
+\end{tabular}
+
+\vfill
+{\small Each release also ships its own detailed \code{HEBCPF_User_Guide.pdf}. When you
+publish results, cite the HEBC paper (Section~\ref{sec:cite}).}\\[6pt]
+{\small\today}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===================== 1 =====================
+\section{What all four releases have in common}
+Every release implements the \textbf{same method} --- the Holomorphic Embedding Based
+Continuation (HEBC) all-solutions power-flow tracer --- and therefore returns the
+\emph{same solution set} for every test case. They also share:
+\begin{itemize}[leftmargin=1.4em]
+  \item the same dependency: MATLAB + MATPOWER (\code{runpf} for the initial point
+        and \code{makeYbus} for the bus-admittance matrix);
+  \item the same three execution frameworks --- serial (\code{run_batch.m}),
+        \code{parfor} (\code{run_batch_par.m}), and \code{parfeval}
+        (\code{run_batch_parfeval.m}, recommended for large cases);
+  \item the same single-case programmatic harness \code{run_merged_case};
+  \item identical bundled test systems and identical solution counts (Table~\ref{tab:counts}).
+\end{itemize}
+Because the counts are identical, \textbf{the choice between releases is about
+\emph{robustness}, \emph{speed}, and \emph{platform} --- never about correctness of the
+answer on well-behaved systems.}
+
+\begin{table}[h]\centering\small
+\caption{Exact number of real solutions (antipodal pairs collapsed) --- identical across
+all four releases.}\label{tab:counts}
+\begin{tabular}{@{}lr@{\qquad}lr@{}}
+\toprule
+System & \# sol. & System & \# sol.\\
+\midrule
+\code{case3}      & 6  & \code{case14mod}         & 30\\
+\code{case4gs}    & 6  & \code{case33bw}          & 16\\
+\code{case4BB0}   & 14 & \code{case39}            & 176\\
+\code{case4BBc}   & 12 & \code{case30}/\code{case_ieee30} & 472\\
+\code{case5loop}  & 10 & \code{case57mod}         & 606\\
+\code{case5Salam} & 10 & \code{case57}            & 1322\\
+\code{case6ww}    & 6  & \code{case118}           & $>1.5\times10^{6}$ (partial)\\
+\code{case7Salam} & 4  & &\\
+\code{case9}/\code{case9Q} & 8 & &\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ===================== 2 =====================
+\section{The two axes of choice}
+The four releases are the combinations of two independent choices.
+
+\subsection*{Axis 1 --- \textcolor{v2col}{v2 (legacy-fast)} vs.\ \textcolor{v3col}{v3 (validated / robust)}}
+This is the important one. \textbf{v2} is the fast legacy configuration; \textbf{v3} is the
+robustness-hardened configuration developed and validated to eliminate the numerical
+failures (wrong-branch drift, non-closing loops) that the legacy settings can hit on sharp
+or fold-dense curves.
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.235\textwidth}
+                   >{\raggedright\arraybackslash}p{0.335\textwidth}
+                   >{\raggedright\arraybackslash}p{0.345\textwidth}@{}}
+\toprule
+\textbf{Aspect} & \textcolor{v2col}{\textbf{v2 --- legacy-fast}} & \textcolor{v3col}{\textbf{v3 --- validated / robust}}\\
+\midrule
+Settings location & inlined in \code{hybrid_traceloops} & centralised in \code{solver_params.m}\\
+Turning-point slope limit (\code{slope_max}) & \code{4e5} --- trusts steep folds & \code{1e4} --- stricter; hardens case118\\
+Hand-back hysteresis (\code{handback}) & \code{0.1} & \code{0.5} --- clears the fold first\\
+Fold initial-step cap (\code{init_cap_k}) & \emph{none} & \code{1500}\\
+Adaptive step cap (\code{max_adapt}) & \emph{none} & \code{true} --- secant-slope driven\\
+Pad\'e pole estimate & consensus (\code{'fixed'}/\code{'random'} toggle) & consensus, fixed bus set \code{2:6}\\
+Speed & \textcolor{v2col}{faster ($\approx$10--20\% in parfeval)} & modestly slower in parfeval\\
+Robustness & may stall (500-cap) on hard curves & \textcolor{v3col}{hardened; exact on every case incl.\ case118}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Both give the same counts on well-behaved systems. The difference shows up on
+\emph{hard} curves (sharp thin-sliver folds, fold-dense loops --- e.g.\ some case118,
+case30 and case57mod curves): v2 may burn its alternation cap on a wrong/non-closing branch
+(costing time; the solution is still found by a neighbouring trace so the \emph{count}
+stays exact), whereas v3 keeps the trace on the true branch by adding the four safeguards
+below.
+
+\subsection*{The extra conditions and criteria in v3 (absent in v2)}
+Every safeguard acts \emph{only near singular points} (turning points / folds) and during
+the hand-off between the holomorphic and continuation routines; on smooth arcs all four
+releases behave identically. The four additions are:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Fold-proximity initial-step cap} (\code{init_cap_k = 1500}). When the
+        holomorphic routine hands over to the continuation near a fold, the holomorphic arc
+        that just collapsed, \code{holo_arc}, is a proxy for how close the fold is. v3 caps
+        the \emph{first} continuation step to \code{astep <= init_cap_k * holo_arc / sstep}:
+        a near-fold hand-off (small \code{holo_arc}) forces a small, careful first step,
+        while a smooth hand-off (large \code{holo_arc}) is left at full step. v2 has no such
+        cap, so its first step can be large enough to jump the fold onto the adjacent (wrong)
+        branch.
+  \item \textbf{Secant-slope adaptive per-step cap} (\code{max_adapt = true}). At every
+        continuation step v3 measures the two-point secant slope
+        $s_k=\lVert\Delta\text{state}\rVert/\lvert\Delta\alpha\rvert$ and caps the next step
+        by how fast that slope is changing:
+        \code{astep <= maximumstep * min(s_prev/s, 1)}. As the curve steepens toward a fold
+        ($s$ rising) the ceiling tightens automatically; once the fold is passed it relaxes
+        back to the full \code{maximumstep}. v2 has no curvature-aware per-step cap.
+  \item \textbf{Stricter turning-point criterion} (\code{slope_max}: \code{1e4} in v3 vs
+        \code{4e5} in v2). The continuation returns to the holomorphic routine only once the
+        secant slope has fallen below \code{slope_max} --- i.e.\ the turning point is
+        genuinely behind it. v2's lax \code{4e5} lets that hand-back fire while the curve is
+        still steep near the fold, risking a holomorphic restart on the wrong branch; v3's
+        \code{1e4} waits for a cleaner exit. (Raising it to $5\!\times\!10^{4}$ or above
+        re-breaks the hard case118 curves.)
+  \item \textbf{Larger hand-back hysteresis} (\code{handback}: \code{0.5} in v3 vs \code{0.1}
+        in v2). Before handing back, the continuation must travel
+        \code{handback}\,$\times$\,\code{aal_min} \emph{past} the homotopy-parameter
+        ($\alpha$) reversal, so the near-singular zone is fully cleared. v3 clears five times
+        as much of that zone as v2, which is what stops the curve being pulled back onto an
+        adjacent branch on the holomorphic restart.
+\end{enumerate}
+Because these fire only near singularities, v3's overall speed cost is small
+(Section~\ref{sec:timing}) while its robustness gain on hard curves is decisive.
+
+\subsection*{Axis 2 --- MEX vs.\ MATLAB (pure)}
+\begin{center}\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.235\textwidth}
+                   >{\raggedright\arraybackslash}p{0.335\textwidth}
+                   >{\raggedright\arraybackslash}p{0.345\textwidth}@{}}
+\toprule
+\textbf{Aspect} & \textbf{MEX build} & \textbf{MATLAB (pure) build}\\
+\midrule
+Hot path      & 2 compiled MEX (\code{Pade_Apprxmt}, \code{holomorphic_cont_tri}) & plain \code{.m} only\\
+Serial speed  & \textbf{$\approx 2\times$ faster} & baseline\\
+Platform      & Windows 64-bit (shipped binaries) & \textbf{any} --- Windows / Linux / macOS\\
+Compiler      & MATLAB Coder, only to rebuild or port & none, ever\\
+Extra files   & \code{*.mexw64}, \code{build_mex.m}, \code{examples.mat} & \emph{none}\\
+Numerical result & \multicolumn{2}{c}{\emph{identical} (verified to $\sim 10^{-13}$)}\\
+\bottomrule
+\end{tabular}
+\end{center}
+The MEX and MATLAB builds of the \emph{same} version (v2 or v3) are interchangeable and
+give bit-comparable answers; MEX is purely a speed/platform choice.
+
+% ===================== 3 =====================
+\section{Choosing a release}
+All four releases return the identical solution set, so there is no single ``best'' choice
+--- only the one that fits your platform and your priorities. The choice reduces to two
+independent decisions; make each, and the release follows.
+
+\textbf{Decision 1 --- robustness-oriented (v3) vs.\ efficiency-oriented (v2).}
+\begin{description}[leftmargin=0em,style=nextline]
+\item[\textcolor{v3col}{Robustness-oriented (v3)}] The hardened configuration. Consensus
+      poles, a turning-point slope limit, hand-back hysteresis, and fold-proximity step caps
+      keep the trace on the true branch, so it does not hit the wrong-branch stalls that can
+      occur on sharp or fold-dense curves. Well suited to hard, large, or meshed systems
+      (e.g.\ case118) and completeness studies --- and, for \emph{serial} runs on large
+      systems, it is also the \emph{faster} of the two (Section~\ref{sec:timing}).
+\item[\textcolor{v2col}{Efficiency-oriented (v2)}] The legacy-fast configuration. About
+      10--20\% faster \emph{under \code{parfeval}} on well-behaved systems, at the cost of
+      occasional wrong-branch stalls on hard curves (which cost time but not correctness ---
+      the count stays exact).
+\end{description}
+
+\textbf{Decision 2 --- compiled (MEX) vs.\ portable (pure MATLAB).}
+\begin{description}[leftmargin=0em,style=nextline]
+\item[MEX] $\approx$1.2--2$\times$ faster, but Windows 64-bit only (or rebuilt with MATLAB
+      Coder).
+\item[Pure MATLAB] Runs on any OS with no compiler, and the hot path is plain \code{.m} you
+      can read and modify; $\approx$1.2--2$\times$ slower.
+\end{description}
+
+The four releases are exactly the four combinations of these two decisions. In short:
+choose \textbf{v3} if you value robustness (or run large systems serially), \textbf{v2} if
+you value raw parallel speed on well-behaved systems; choose \textbf{MEX} for speed on
+Windows, \textbf{pure MATLAB} for portability or to read and edit the source.
+
+% ===================== 4 =====================
+\section{Feature matrix}
+\begin{center}\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+& \code{MEX_v3} & \code{matlab_v3} & \code{MEX_v2} & \code{matlab_v2}\\
+\midrule
+Robustness-hardened config (v3)      & \yes & \yes & \no  & \no\\
+\code{solver_params.m} single-source & \yes & \yes & \no  & \no\\
+Fold-proximity step caps             & \yes & \yes & \no  & \no\\
+Consensus Pad\'e poles               & \yes & \yes & \yes & \yes\\
+\code{'fixed'}/\code{'random'} pole toggle & \no & \no & \yes & \yes\\
+Compiled MEX ($\approx 2\times$ serial) & \yes & \no & \yes & \no\\
+Cross-platform (no compiler)         & \no  & \yes & \no  & \yes\\
+Serial / \code{parfor} / \code{parfeval} & \yes & \yes & \yes & \yes\\
+Identical solution counts            & \yes & \yes & \yes & \yes\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ===================== 5 =====================
+\section{Numerical test bed and timing comparison}\label{sec:timing}
+
+\subsection{Test bed}\label{sec:testbed}
+All timings in this section were measured on a single dedicated workstation, one MATLAB
+process at a time (no concurrent jobs), to minimise interference:
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Component & Specification\\
+\midrule
+CPU & Intel Core i9-13900K --- 24 cores / 32 threads (8 performance + 16 efficiency cores)\\
+RAM & 128\,GB\\
+Operating system & Microsoft Windows 11 Pro, version 22H2 (build 22621)\\
+MATLAB & R2022a (9.12.0), \code{maxNumCompThreads} = 24\\
+Parallel pool & \code{local} profile, 23 workers\\
+Initial solve & MATPOWER \code{runpf} (for the starting operating point)\\
+\bottomrule
+\end{tabular}
+\end{center}
+Solution \emph{counts} are identical for every release (Table~\ref{tab:counts}) and were
+verified exact in every single run; only wall-clock time differs. \textbf{Serial} figures
+are a single timed run per case; \textbf{\code{parfeval}} figures are the \emph{mean of
+three back-to-back trials} on a warmed pool (the one-time $\sim$45\,s pool start-up is
+excluded). All times are the trace wall-clock returned by \code{run_merged_case}.
+
+\subsection{Serial timings --- single trial (seconds)}
+\begin{center}\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+System & \# sol. & \code{MEX_v2} & \code{MEX_v3} & \code{matlab_v2} & \code{matlab_v3}\\
+\midrule
+\code{case9}     & 8   & 1.4  & 1.5  & 2.0  & 2.4\\
+\code{case14mod} & 30  & 8.2  & 9.4  & 14.0 & 15.9\\
+\code{case33bw}  & 16  & 19.9 & 25.1 & 33.7 & 42.4\\
+\code{case39}    & 176 & 513  & 440  & 558  & 627\\
+\code{case30}    & 472 & 946  & 527  & 793  & 897\\
+\code{case57mod} & 606 & 4502 & 2737 & 3548 & 3984\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{\code{parfeval} timings --- mean of 3 trials (seconds)}
+\begin{center}\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+System & \# sol. & \code{MEX_v2} & \code{MEX_v3} & \code{matlab_v2} & \code{matlab_v3}\\
+\midrule
+\code{case9}     & 8   & 0.6   & 0.7   & 0.9   & 1.0\\
+\code{case14mod} & 30  & 3.5   & 3.8   & 5.8   & 6.0\\
+\code{case33bw}  & 16  & 5.6   & 8.4   & 10.3  & 12.7\\
+\code{case39}    & 176 & 49.3  & 58.7  & 71.1  & 75.2\\
+\code{case30}    & 472 & 90.6  & 104.3 & 169.4 & 162.3\\
+\code{case57mod} & 606 & 268.7 & 304.9 & 408.3 & 421.1\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{How to read these tables --- three findings.}
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Use \code{parfeval} for anything large.} On this 24-core machine parfeval is
+        \textbf{5--17$\times$} faster than serial on the big cases (e.g.\ \code{MEX_v3}
+        case57mod: 2737\,s serial $\to$ 305\,s parfeval). Serial is best reserved for small
+        systems, reproducibility, and debugging.
+  \item \textbf{The v2-vs-v3 winner depends on the mode.} Under \code{parfeval} the legacy
+        \emph{v2} is $\approx$10--20\% faster than the hardened \emph{v3}: its lighter
+        per-step config wins and its occasional wrong-branch stalls are absorbed across 23
+        workers. In \emph{serial} this \emph{reverses} on the large MEX cases ---
+        \code{MEX_v3} beats \code{MEX_v2} by up to \textbf{1.6$\times$} (case57mod 2737\,s vs
+        4502\,s) --- because v2's legacy settings hit wrong-branch stalls that each burn the
+        500-step cap, and in serial there is no other worker to hide that cost. \emph{So
+        v2's speed edge exists only in parallel; for serial runs on large or hard systems v3
+        is both safer and faster.} (v2's large-case serial times even differ between the MEX
+        and pure-MATLAB builds because tiny floating-point differences change which curves
+        stall --- a further argument for v3's predictability.)
+  \item \textbf{MEX vs pure-MATLAB.} Under \code{parfeval} MEX is $\approx$1.2--1.6$\times$
+        faster than the pure-MATLAB build of the same version (v3 case57mod 305\,s vs
+        421\,s). This is smaller than the $\approx 2\times$ MEX advantage seen in
+        \emph{serial}, because parfeval already spreads the work across workers so per-trace
+        speed matters less.
+\end{enumerate}
+Times carry the usual parallel run-to-run variance ($\pm$10--15\%); read them as ratios, not
+absolutes. Every release returns the exact solution count on every case, so these tables are
+purely a speed guide.
+
+% ===================== 6 =====================
+\section{Where to go next}
+Each release folder contains its own \code{HEBCPF_User_Guide.pdf} with installation,
+quick-start, full parameter reference, the \code{parfor}-vs-\code{parfeval} explanation,
+and troubleshooting specific to that build. Start there once you have picked a release from
+this guide.
+
+\section{License and third-party notices}
+HEBCPF is distributed under the BSD 3-Clause License; see the top-level \code{LICENSE}
+file. The suite depends on MATPOWER at runtime and calls MATPOWER functions including
+\code{runpf}, \code{makeYbus}, \code{idx_bus}, and \code{idx_brch}. Some bundled
+\code{caseXXX.m} files are copied from, derived from, or modified from MATPOWER and other
+public test-system sources. Preserve per-file attribution notices when redistributing
+modified versions, and see the top-level \code{NOTICE} file for third-party attribution
+details.
+
+\section{Citing this solver}\label{sec:cite}
+If you use results from any release, please cite the HEBC paper:
+\begin{quote}\small
+D.\ Wu and B.\ Wang, ``Holomorphic Embedding Based Continuation Method for Identifying
+Multiple Power Flow Solutions,'' \emph{IEEE Access}, vol.~7, pp.~86843--86853, 2019.
+doi:\,\doi{10.1109/ACCESS.2019.2925384}.
+\end{quote}
+For citing the software package itself, see the top-level \code{CITATION.cff} file.
+The foundational and related works (elliptical branch tracing, Wu's 2017 UW--Madison thesis,
+the ACOPF extension, the voltage-stability-margin application, and the IEEE Dataport
+solution-set collection) are listed in each release's user guide.
+
+\vfill
+\begin{center}\small\itshape
+HEBCPF Solver Suite --- Overview \& Selection Guide. Redistribute alongside the releases.
+\end{center}
+
+\end{document}

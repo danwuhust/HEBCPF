@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use HEBCPF, please cite the HEBC paper below and cite this software package when appropriate."
+title: "HEBCPF Solver Suite"
+type: software
+authors:
+  - family-names: Wu
+    given-names: Dan
+  - family-names: Wang
+    given-names: Bin
+version: "2026.07"
+date-released: "2026-07-04"
+license: BSD-3-Clause
+abstract: "MATLAB solver suite for finding all real-valued AC power-flow solutions using holomorphic-embedding-based continuation."
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Wu
+      given-names: Dan
+    - family-names: Wang
+      given-names: Bin
+  title: "Holomorphic Embedding Based Continuation Method for Identifying Multiple Power Flow Solutions"
+  journal: "IEEE Access"
+  volume: 7
+  start: 86843
+  end: 86853
+  year: 2019
+  doi: "10.1109/ACCESS.2019.2925384"
