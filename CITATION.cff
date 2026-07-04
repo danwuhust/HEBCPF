@@ -10,6 +10,7 @@ authors:
 version: "2026.07"
 date-released: "2026-07-04"
 license: BSD-3-Clause
+repository-code: "https://github.com/danwuhust/HEBCPF"
 abstract: "MATLAB solver suite for finding all real-valued AC power-flow solutions using holomorphic-embedding-based continuation."
 preferred-citation:
   type: article
