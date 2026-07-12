@@ -64,6 +64,25 @@ selected hot-path routines. They are provided for convenience. Users on other
 platforms should rebuild them with `build_mex` and MATLAB Coder, or use one of
 the pure MATLAB releases.
 
+SuiteSparse/KLU and klurf
+-------------------------
+
+Package 2026.07.12 includes an optional KLU-accelerated bordered Newton solve.
+The MEX release folders include `klurf.mexw64`. The top-level `klurf/` folder
+contains the HEBCPF-specific MEX wrapper source (`klurf_mex.c`), build helper
+(`klurf_make.m`), and build notes.
+
+`klurf` links against SuiteSparse/KLU and related SuiteSparse components,
+including AMD, COLAMD, BTF, and SuiteSparse_config. SuiteSparse is authored
+and maintained by Timothy A. Davis and contributors:
+
+  https://github.com/DrTimothyAldenDavis/SuiteSparse
+
+KLU and related SuiteSparse components are distributed under their own license
+terms, including GNU LGPL-2.1-or-later terms for KLU. Users who rebuild,
+modify, or redistribute the KLU-linked MEX must review the authoritative
+SuiteSparse license texts and meet the applicable redistribution requirements.
+
 Citation
 --------
 

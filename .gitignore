@@ -25,6 +25,9 @@ html/
 *_mex.mexmaci64
 *.mexw64.manifest
 
+# Source wrapper for the optional KLU refactor MEX; keep it in Git releases.
+!klurf/klurf_mex.c
+
 # LaTeX build byproducts
 *.aux
 *.log

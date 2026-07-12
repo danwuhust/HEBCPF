@@ -1,0 +1,6 @@
+# Keep generated and compiled MATLAB artifacts out of text diffs and line-ending conversion.
+*.pdf binary
+*.mat binary
+*.mexw64 binary
+*.mexa64 binary
+*.mexmaci64 binary

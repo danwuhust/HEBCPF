@@ -37,6 +37,10 @@
 
 \setlength{\parskip}{4pt}\setlength{\parindent}{0pt}
 
+% ---- looser line breaking so long code tokens/lists do not overrun the margin ----
+\tolerance=3000
+\emergencystretch=3em
+
 \begin{document}
 
 % ===================== TITLE =====================
@@ -52,21 +56,24 @@
 
 {\large This guide compares the \textbf{four} packaged releases and helps you pick one.}\\[18pt]
 
+{\small
 \begin{tabular}{@{}ll@{}}
 \toprule
 Release folder & Orientation\\
 \midrule
-\code{HEBCPF_MEX_v3.202606}    & Robustness-oriented, compiled --- hardened config, Windows x64\\
-\code{HEBCPF_matlab_v3.202606} & Robustness-oriented, portable --- hardened config, any OS\\
-\code{HEBCPF_MEX_v2.202607}    & Efficiency-oriented, compiled --- legacy-fast config, Windows x64\\
-\code{HEBCPF_matlab_v2.202607} & Efficiency-oriented, portable --- legacy-fast config, any OS\\
+\code{HEBCPF_MEX_v3.20260712}    & Robustness-oriented, compiled --- hardened config, Windows x64\\
+\code{HEBCPF_matlab_v3.20260712} & Robustness-oriented, portable --- hardened config, any OS\\
+\code{HEBCPF_MEX_v2.20260712}    & Efficiency-oriented, compiled --- legacy-fast config, Windows x64\\
+\code{HEBCPF_matlab_v2.20260712} & Efficiency-oriented, portable --- legacy-fast config, any OS\\
 \bottomrule
 \end{tabular}
+}
 
 \vfill
+{\small Solver lines are v3.202606 and v2.202607; this package release is dated 2026.07.12.}\\[6pt]
 {\small Each release also ships its own detailed \code{HEBCPF_User_Guide.pdf}. When you
 publish results, cite the HEBC paper (Section~\ref{sec:cite}).}\\[6pt]
-{\small\today}
+{\small Package release: July 12, 2026}
 \end{titlepage}
 
 \tableofcontents
@@ -75,8 +82,8 @@ publish results, cite the HEBC paper (Section~\ref{sec:cite}).}\\[6pt]
 % ===================== 1 =====================
 \section{What all four releases have in common}
 Every release implements the \textbf{same method} --- the Holomorphic Embedding Based
-Continuation (HEBC) all-solutions power-flow tracer --- and therefore returns the
-\emph{same solution set} for every test case. They also share:
+Continuation (HEBC) all-solutions power-flow tracer --- and returns the same solution set
+on the completed benchmark cases. They also share:
 \begin{itemize}[leftmargin=1.4em]
   \item the same dependency: MATLAB + MATPOWER (\code{runpf} for the initial point
         and \code{makeYbus} for the bus-admittance matrix);
@@ -84,15 +91,23 @@ Continuation (HEBC) all-solutions power-flow tracer --- and therefore returns th
         \code{parfor} (\code{run_batch_par.m}), and \code{parfeval}
         (\code{run_batch_parfeval.m}, recommended for large cases);
   \item the same single-case programmatic harness \code{run_merged_case};
-  \item identical bundled test systems and identical solution counts (Table~\ref{tab:counts}).
+  \item identical bundled test systems and the same published solution-count references
+        (Table~\ref{tab:counts});
+  \item the same \textbf{KLU-capable bordered Newton solve} on the numerical hot path ---
+        a sparse-core Schur elimination with KLU symbolic-once refactorisation that keeps the
+        \emph{exact} Jacobian (so the solution counts are unchanged) and scales with system
+        size, reaching ${\sim}7.5\times$ on \code{case118}. It ships enabled in the MEX
+        releases and is an optional drop-in MEX in the pure-MATLAB releases (see each User
+        Guide's ``Linear-solver acceleration'' section).
 \end{itemize}
-Because the counts are identical, \textbf{the choice between releases is about
+On completed benchmark cases, \textbf{the choice between releases is about
 \emph{robustness}, \emph{speed}, and \emph{platform} --- never about correctness of the
 answer on well-behaved systems.}
 
 \begin{table}[h]\centering\small
-\caption{Exact number of real solutions (antipodal pairs collapsed) --- identical across
-all four releases.}\label{tab:counts}
+\caption{Reference number of real solutions (antipodal pairs collapsed). Values through
+\code{case57} are completed benchmarks; \code{case118} is a partial enumeration, not a
+claimed total.}\label{tab:counts}
 \begin{tabular}{@{}lr@{\qquad}lr@{}}
 \toprule
 System & \# sol. & System & \# sol.\\
@@ -109,6 +124,22 @@ System & \# sol. & System & \# sol.\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Changes in package release 2026.07.12}
+Compared with the publicly released \code{HEBCPF} baseline folders (solver lines
+\code{v2.202607} and \code{v3.202606}), this package keeps the HEBC formulation and the
+v2/v3 numerical configurations unchanged. The updates are:
+\begin{itemize}[leftmargin=1.4em]
+  \item the bordered Newton corrector now has a sparse-core Schur-complement path with
+        SuiteSparse/KLU symbolic-once refactorisation. The MEX releases include
+        \code{klurf.mexw64}; the top-level \code{klurf/} folder provides the source and
+        build helper for other platforms or for the pure-MATLAB releases;
+  \item keyed bucket lookup accelerates repeated-solution collection in the serial,
+        \code{parfor}, and \code{parfeval} collectors;
+  \item geometric \code{Zsave} growth avoids repeated full-array copies while collecting
+        newly discovered solutions;
+  \item the Jacobian cache has a lower-overhead hot path after its per-trace initialisation.
+\end{itemize}
 
 % ===================== 2 =====================
 \section{The two axes of choice}
@@ -195,6 +226,7 @@ Because these fire only near singularities, v3's overall speed cost is small
 \textbf{Aspect} & \textbf{MEX build} & \textbf{MATLAB (pure) build}\\
 \midrule
 Hot path      & 2 compiled MEX (\code{Pade_Apprxmt}, \code{holomorphic_cont_tri}) & plain \code{.m} only\\
+Bordered solve & KLU symbolic-once refactor --- \code{klurf.mexw64} shipped, on by default & KLU optional (drop \code{klurf} in; dense otherwise)\\
 Serial speed  & \textbf{$\approx 2\times$ faster} & baseline\\
 Platform      & Windows 64-bit (shipped binaries) & \textbf{any} --- Windows / Linux / macOS\\
 Compiler      & MATLAB Coder, only to rebuild or port & none, ever\\
@@ -275,15 +307,22 @@ RAM & 128\,GB\\
 Operating system & Microsoft Windows 11 Pro, version 22H2 (build 22621)\\
 MATLAB & R2022a (9.12.0), \code{maxNumCompThreads} = 24\\
 Parallel pool & \code{local} profile, 23 workers\\
-Initial solve & MATPOWER \code{runpf} (for the starting operating point)\\
+Initial solve & MATPOWER 7.1 \code{runpf} (for the starting operating point)\\
 \bottomrule
 \end{tabular}
 \end{center}
-Solution \emph{counts} are identical for every release (Table~\ref{tab:counts}) and were
-verified exact in every single run; only wall-clock time differs. \textbf{Serial} figures
+For the completed cases listed in the timing tables, solution \emph{counts} were verified
+identical across releases; only wall-clock time differs. \textbf{Serial} figures
 are a single timed run per case; \textbf{\code{parfeval}} figures are the \emph{mean of
 three back-to-back trials} on a warmed pool (the one-time $\sim$45\,s pool start-up is
 excluded). All times are the trace wall-clock returned by \code{run_merged_case}.
+
+These figures are a \emph{historical dense-bordered-solve baseline}; they are retained for
+version selection and are not an end-to-end timing claim for package 2026.07.12. The current
+MEX releases ship the \textbf{KLU symbolic-once refactor}, while pure-MATLAB releases support
+it when a compatible \code{klurf} MEX is placed on the path. KLU further reduces time on
+larger systems --- a wash below \code{case30}, but up to ${\sim}7.5\times$ on \code{case118}.
+See each User Guide (``Linear-solver acceleration'') for the size scaling.
 
 \subsection{Serial timings --- single trial (seconds)}
 \begin{center}\small
@@ -341,8 +380,7 @@ System & \# sol. & \code{MEX_v2} & \code{MEX_v3} & \code{matlab_v2} & \code{matl
         speed matters less.
 \end{enumerate}
 Times carry the usual parallel run-to-run variance ($\pm$10--15\%); read them as ratios, not
-absolutes. Every release returns the exact solution count on every case, so these tables are
-purely a speed guide.
+absolutes. For the completed benchmark cases, these tables are purely a speed guide.
 
 % ===================== 6 =====================
 \section{Where to go next}
@@ -359,6 +397,11 @@ file. The suite depends on MATPOWER at runtime and calls MATPOWER functions incl
 public test-system sources. Preserve per-file attribution notices when redistributing
 modified versions, and see the top-level \code{NOTICE} file for third-party attribution
 details.
+
+The optional KLU acceleration on the bordered-solve hot path links \textbf{SuiteSparse/KLU}
+(Timothy A.~Davis), distributed under the GNU LGPL-2.1-or-later license. The \code{klurf}
+MEX source and a cross-platform build script are provided in the top-level \code{klurf/}
+folder; see \code{klurf/README_KLURF.md} and the SuiteSparse license terms.
 
 \section{Citing this solver}\label{sec:cite}
 If you use results from any release, please cite the HEBC paper:
