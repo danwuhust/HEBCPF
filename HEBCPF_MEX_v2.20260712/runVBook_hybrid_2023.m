@@ -94,11 +94,11 @@ else % initialize, starting from the first solution and the first trace
 end
 
 % [KeyedDedup] O(1)-amortized solution dedup (replaces the O(N) linear Zsave-scan below).
-% MATCH = L1 over 3-5 random signature variables (tol 4e-7); the sum(sig) key keeps buckets
+% MATCH = L1 over 3-7 random signature variables (tol 4e-7); the sum(sig) key keeps buckets
 % tiny. Seeded from the existing solutions so dd.n tracks numberofsolutions.
 V_dd = size(Zsave,1);
 rs_dd = RandStream('mt19937ar','Seed',7);
-sigvars_dd = sort(randperm(rs_dd, V_dd, min(5,V_dd)));   % 3-5 predefined random signature vars
+sigvars_dd = sort(randperm(rs_dd, V_dd, min(7,V_dd)));   % 3-7 predefined random signature vars
 dd = KeyedDedup(sigvars_dd, 4*10^(-7), false, max(1024, numberofsolutions), [], 'L1');
 dd.seed(Zsave(:, 1:numberofsolutions));
 
