@@ -86,13 +86,13 @@ else % initialize, starting from the first solution and the first trace
 end
 
 % [KeyedDedup] O(1)-amortized solution dedup (replaces the O(N) linear Zsave-scan below --
-% critical when resuming a large checkpoint). MATCH = L1 over 3-5 random signature vars (tol 4e-7, exact +
+% critical when resuming a large checkpoint). MATCH = L1 over 3-7 random signature vars (tol 4e-7, exact +
 % antipodal); the bucket KEY is a sum over a few predefined random variables, which keeps
 % buckets tiny (the full-vector sum would cluster and degrade to O(N)). Seeded from the
 % existing solutions so dd.n tracks numberofsolutions.
 V_dd = size(Zsave,1);
 rs_dd = RandStream('mt19937ar','Seed',7);
-sigvars_dd = sort(randperm(rs_dd, V_dd, min(5,V_dd)));   % 3-5 predefined random signature vars
+sigvars_dd = sort(randperm(rs_dd, V_dd, min(7,V_dd)));   % 3-7 predefined random signature vars
 dd = KeyedDedup(sigvars_dd, 4*10^(-7), false, max(1024, numberofsolutions), [], 'L1');
 dd.seed(Zsave(:, 1:numberofsolutions));
 
@@ -207,7 +207,7 @@ while numberofsolutions+1>solutionnumber
     % canonicalize/save. Zero-yield iterations skipped.
     if Zsave_temp_count > 0
         if numberofsolutions > size(Zsave,2)
-            if ~exist('Zsave_grow','var'); Zsave_grow = max(4096, round(0.01*numberofsolutions)); end
+            if ~exist('Zsave_grow','var'); Zsave_grow = max(1024, round(0.01*numberofsolutions)); end
             Zsave(:, max(size(Zsave,2)+Zsave_grow, numberofsolutions)) = 0;
             Zsave_grow = 2*Zsave_grow;
         end
