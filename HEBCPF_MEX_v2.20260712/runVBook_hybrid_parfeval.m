@@ -87,14 +87,14 @@ end
 
 % [KeyedDedup] O(1)-amortized solution dedup (replaces the O(N) linear Zsave-scan below --
 % critical when resuming a large checkpoint). MATCH = L1 over a few predefined random
-% signature variables (tol 4e-7). A bounded 3-5 term sum is scale-robust -- unlike the L1
+% signature variables (tol 4e-7). A bounded 3-7 term sum is scale-robust -- unlike the L1
 % sum over ALL variables, which grows with system size and over-counts numerical near-
 % duplicates -- and its sum(sig) key keeps buckets tiny. (Validated on the 2.28M case118
 % checkpoint: identical merges to the full inf-norm match, 0 false merges, ~44us/candidate.)
 % Seeded from the existing solutions so dd.n tracks numberofsolutions.
 V_dd = size(Zsave,1);
 rs_dd = RandStream('mt19937ar','Seed',7);
-sigvars_dd = sort(randperm(rs_dd, V_dd, min(5,V_dd)));   % 3-5 predefined random signature vars
+sigvars_dd = sort(randperm(rs_dd, V_dd, min(7,V_dd)));   % 3-7 predefined random signature vars
 dd = KeyedDedup(sigvars_dd, 4*10^(-7), false, max(1024, numberofsolutions), [], 'L1');
 dd.seed(Zsave(:, 1:numberofsolutions));
 
