@@ -40,9 +40,9 @@ Direct API: `X = klurf(A, B)` solves `A*X = B` (A real sparse n×n, B real dense
 
 ## Prebuilt binary
 
-`klurf.mexw64` (Windows x64) is included and already copied into the two `HEBCPF_MEX_*`
-folders. Drop it into a `HEBCPF_matlab_*` folder too if you want the acceleration there (those
-folders are pure-MATLAB by default and ship without it).
+`klurf.mexw64` (Windows x64) is included and already copied into the `HEBCPF_MEX_*`
+folders. MATLAB v2/v3 can also use a compatible binary placed in their release folder.
+MATLAB v4 deliberately keeps its correctors pure MATLAB and does not call `klurf`.
 
 ## Rebuilding (Linux / macOS, or from source)
 

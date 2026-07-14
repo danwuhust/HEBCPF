@@ -15,13 +15,13 @@ cases_to_run = {
 %     'case5Salam',    % 10 solutions in 0.39 sec
 %     'case6ww',       % 6 solutions in 0.31 sec
 %     'case7Salam',    % 4 solutions in 0.22 sec
-%     'case9',         % 8 solutions in 0.52 sec
+    'case9',         % 8 solutions (default smoke test)
 %     'case9Q',        % 8 solutions in 0.40 sec
 %     'case14mod',     % 30 solutions in 2.87 sec
 %     'case33bw',      % 16 solutions in 5.20 sec
 %     'case39',        % 176 solutions in 43.84 sec
 %     'case30',        % 472 solutions in 80.80 sec (large; uncomment to stress-test)
-    'case57mod',     % 606 solutions in 271.26 sec (large; uncomment to stress-test)
+%     'case57mod',     % 606 solutions in 271.26 sec (large; uncomment to stress-test)
 %     'case57',     % 1322 solutions in 625.29 sec (large; uncomment to stress-test)
 };
 

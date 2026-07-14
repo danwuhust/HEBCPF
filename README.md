@@ -4,13 +4,15 @@ HEBCPF is a MATLAB solver suite for finding all real-valued solutions of AC
 power-flow equations. It combines an ellipsoidal formulation, holomorphic
 embedding, Pade approximation, and numerical continuation.
 
-This package release is **2026.07.12**. It updates the publicly released
-`HEBCPF` baseline while preserving the v2 and v3 solver lines.
+This package release is **2026.07.14**. It updates the publicly released
+`HEBCPF` baseline, preserves the v2/v3 solver lines, and adds MEX v4 and pure MATLAB v4.
 
 ## Releases
 
 | Folder | Solver line | Orientation | Platform |
 | --- | --- | --- | --- |
+| `HEBCPF_MEX_v4_20260714` | v4.20260714 | Performance-optimized compiled build | Windows x64 MATLAB, or rebuild MEX |
+| `HEBCPF_matlab_v4_20260714` | v4.20260714 | Performance-optimized pure MATLAB build | Cross-platform |
 | `HEBCPF_MEX_v3.20260712` | v3.202606 | Robustness-oriented compiled build | Windows x64 MATLAB, or rebuild MEX |
 | `HEBCPF_matlab_v3.20260712` | v3.202606 | Robustness-oriented pure MATLAB build | Cross-platform |
 | `HEBCPF_MEX_v2.20260712` | v2.202607 | Efficiency-oriented compiled build | Windows x64 MATLAB, or rebuild MEX |
@@ -26,7 +28,7 @@ installation, parameters, and troubleshooting.
 
 ## Requirements
 
-- MATLAB R2022a or later. Package 2026.07.12 was validated with MATLAB R2022a.
+- MATLAB R2022a or later. Package 2026.07.14 was validated with MATLAB R2022a.
 - MATPOWER 7.1 installed and on the MATLAB path.
 - Parallel Computing Toolbox for `run_batch_par.m` and `run_batch_parfeval.m`.
 - MATLAB Coder and a supported C compiler only when rebuilding MEX functions.
@@ -47,9 +49,10 @@ HEBCPF calls MATPOWER's installed `runpf`, `makeYbus`, `idx_bus`, and
 2. Choose exactly one release folder. For example:
 
    ```matlab
-   cd('<path_to_HEBCPF>/HEBCPF_matlab_v3.20260712')
+   cd('<path_to_HEBCPF>/HEBCPF_matlab_v4_20260714')
    addpath(pwd)
-   run_batch
+   [result, solutions] = run_merged_case('case9', 'serial');
+   result
    ```
 
 3. For a single programmatic run:
@@ -70,10 +73,10 @@ The bordered Newton corrector supports a sparse-core Schur-complement solve
 with SuiteSparse/KLU symbolic-once refactorization through `klurf`.
 
 - MEX releases include `klurf.mexw64` and enable it automatically on Windows x64.
-- Pure MATLAB releases use the dense bordered solve by default. Copy a compatible
-  `klurf` binary into the release folder, or build one from `klurf/`, to enable
-  the acceleration.
-- Set `global USEKLU` before a run to select a corrector mode:
+- MATLAB v2 and MATLAB v3 can use a compatible `klurf` binary when one is placed in
+  the release folder. MATLAB v4 deliberately uses MATLAB built-ins only and ignores
+  `klurf`, even when it is present on the path.
+- The `global USEKLU` override applies to MEX releases and optional-KLU MATLAB v2/v3:
 
   ```matlab
   USEKLU = 0;   % dense bordered solve
@@ -89,15 +92,17 @@ residual, and wall-clock time. The batch drivers write ignored CSV summaries:
 `results_summary.csv`, `results_par_summary.csv`, and
 `results_parfeval_summary.csv`.
 
-The packaged `main.m` workflow was smoke-tested in all four releases with
-MATLAB R2022a and MATPOWER 7.1. For reproducible long runs, use the checkpoint
-instructions in the User Guide; large MATLAB checkpoints should use `-v7.3`.
+The package was checked with MATLAB R2022a and MATPOWER 7.1. The documented MATLAB v4
+validation record is in `HEBCPF_matlab_v4_20260714/README_v4_pure.md` and the Suite
+Overview. For reproducible long runs, use the checkpoint instructions in the User Guide;
+large MATLAB checkpoints should use `-v7.3`.
 
 ## Release Notes
 
-See [CHANGELOG.md](CHANGELOG.md). In summary, package 2026.07.12 adds KLU
-bordered-Newton acceleration, keyed solution collection, and lower-overhead
-solution storage relative to the public baseline.
+See [CHANGELOG.md](CHANGELOG.md). Package 2026.07.14 adds MEX v4 and MATLAB v4,
+including the v4 global `parfeval` queue and hot-path allocation/cache improvements.
+The KLU bordered-Newton acceleration and keyed solution collection were introduced in
+2026.07.12.
 
 ## License, Attribution, and Citation
 

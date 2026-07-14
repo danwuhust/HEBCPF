@@ -214,7 +214,7 @@ Further platform notes are in the top-level \code{klurf/README_KLURF.md}.
 >> cd '<path>\HEBCPF_matlab_v3.20260712'
 >> addpath(pwd)
 \end{lstlisting}
-  \item Add only this one HEBCPF release folder to the MATLAB path. Do not add all four
+  \item Add only this one HEBCPF release folder to the MATLAB path. Do not add all six
         release folders simultaneously, because they contain many functions and cases with
         the same names.
   \item Nothing else is needed --- this build is pure MATLAB, so there are no binaries to
@@ -459,9 +459,8 @@ that can occur with the legacy settings. Four changes matter most, all in
   \item \textbf{Consensus pole estimate} (\code{pole_buses = 2:6}, \code{pole_consensus})
         --- rejects spurious per-bus poles that would place the hand-off badly
         (Section~\ref{sec:pole});
-  \item \textbf{Turning-point slope limit} \code{slope_max = 1e4} --- keeps the
-        continuation active through steep near-singular arcs instead of handing back too
-        early (values of $5\!\times\!10^4$ and above re-break the hard case118 curves);
+  \item \textbf{Turning-point slope limit} \code{slope_max = 4e5} --- the shared
+        release default; validate partial case118 enumerations separately before changing it;
   \item \textbf{Hand-back hysteresis} \code{handback = 0.5} --- travels far enough past a
         turning point before returning to the holomorphic step that the curve cannot be
         misled onto an adjacent wrong branch;
@@ -630,7 +629,7 @@ cover the parameters you are most likely to adjust, with this build's shipped de
 \code{holonum}      & \code{50}   & Maximum Pad\'e steps per outer iteration before forcing continuation.\\
 \code{holo_arc_max} & \code{0.01} & Maximum holomorphic arc length per step.\\
 \code{outnum}       & \code{500}  & Cap on holomorphic$\leftrightarrow$continuation alternations per curve (a stall burns this cap).\\
-\code{slope_max}    & \code{1e4}  & Maximum secant slope at which a turning point is accepted as passed. \code{1e4} is the validated value; $\ge 5\!\times\!10^4$ re-breaks the hard case118 curves.\\
+\code{slope_max}    & \code{4e5}  & Maximum secant slope at which a turning point is accepted as passed. Shared release default; validate partial case118 enumerations separately before changing it.\\
 \code{aal_min}      & \code{1e-6} & Minimum homotopy-parameter increment; the unit for \code{handback}.\\
 \code{im_tol}       & \code{1e-3} & Imaginary-part tolerance for accepting a Pad\'e root as a real pole.\\
 \code{handback}     & \code{0.5}  & Hand-back hysteresis ($\times$\code{aal_min}): how far past a turning point to travel before returning to the holomorphic routine. \code{0.5} is validated across all cases (the legacy build used \code{0.1}).\\

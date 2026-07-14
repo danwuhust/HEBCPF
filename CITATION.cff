@@ -7,8 +7,8 @@ authors:
     given-names: Dan
   - family-names: Wang
     given-names: Bin
-version: "2026.07.12"
-date-released: "2026-07-12"
+version: "2026.07.14"
+date-released: "2026-07-14"
 license: BSD-3-Clause
 repository-code: "https://github.com/danwuhust/HEBCPF"
 abstract: "MATLAB solver suite for finding all real-valued AC power-flow solutions using holomorphic-embedding-based continuation."

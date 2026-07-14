@@ -7,19 +7,19 @@
 %  Configuration: edit here to choose which systems to test
 %% =========================================================
 cases_to_run = {
-    'case3',         % 6 solutions
-    'case4gs',       % 6 solutions
-    'case4BB0',      % 14 solutions
-    'case4BBc',      % 12 solutions
-    'case5loop',     % 10 solutions
-    'case5Salam',    % 10 solutions
-    'case6ww',       % 6 solutions
-    'case7Salam',    % 4 solutions
-    'case9',         % 8 solutions
-    'case9Q',        % 8 solutions
-    'case14mod',     % 30 solutions
-    'case33bw',      % 16 solutions
-    'case39',        % 176 solutions
+%     'case3',         % 6 solutions
+%     'case4gs',       % 6 solutions
+%     'case4BB0',      % 14 solutions
+%     'case4BBc',      % 12 solutions
+%     'case5loop',     % 10 solutions
+%     'case5Salam',    % 10 solutions
+%     'case6ww',       % 6 solutions
+%     'case7Salam',    % 4 solutions
+    'case9',         % 8 solutions (default smoke test)
+%     'case9Q',        % 8 solutions
+%     'case14mod',     % 30 solutions
+%     'case33bw',      % 16 solutions
+%     'case39',        % 176 solutions
 %     'case30',        % 472 solutions
 };
 

@@ -67,8 +67,9 @@ the pure MATLAB releases.
 SuiteSparse/KLU and klurf
 -------------------------
 
-Package 2026.07.12 includes an optional KLU-accelerated bordered Newton solve.
-The MEX release folders include `klurf.mexw64`. The top-level `klurf/` folder
+Package 2026.07.14 includes an optional KLU-accelerated bordered Newton solve.
+The MEX release folders include `klurf.mexw64`. MATLAB v2/v3 can use a compatible
+`klurf` binary; MATLAB v4 deliberately uses MATLAB built-ins only. The top-level `klurf/` folder
 contains the HEBCPF-specific MEX wrapper source (`klurf_mex.c`), build helper
 (`klurf_make.m`), and build notes.
 

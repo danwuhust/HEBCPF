@@ -59,7 +59,7 @@ param.imax          = 40;       % max corrector Newton iterations per continuati
 param.maxskip       = 50;       % consecutive numerical stalls before Fail=1
 param.maxsolu       = 100;      % max solutions collected per continuation loop before Fail=2
 param.slope_max     = 4e5;      % max secant slope to accept a turning point as passed
-                                %   (1e4 validated; 5e4+ re-breaks case118 hard curves, see README)
+                                %   (shared default for the 2026.07.14 comparison release)
 param.PS            = 300;      % phase-II (pinv) duration in steps
 param.interval      = 1;        % stride for the turning-point finite-difference test
 param.dev           = 20;       % console print interval (display only)

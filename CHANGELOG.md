@@ -2,6 +2,21 @@
 
 All notable changes to HEBCPF are documented here.
 
+## 2026.07.14
+
+- Added `HEBCPF_MEX_v4_20260714` and `HEBCPF_matlab_v4_20260714`, performance-optimized
+  successors to the MEX and pure-MATLAB v3 releases.
+- Replaced the MEX v3 `parfeval` row barrier with a global work queue that preserves
+  one in-flight trace per equation; retained the old scheduler as
+  `runVBook_hybrid_parfeval_barrier.m`.
+- Added cached sparse LU ordering, sparse holomorphic-assembly reuse, and allocation-free
+  Pad\'e polynomial evaluation in MEX v4.
+- Added the same queue scheduler and holomorphic-kernel optimizations to MATLAB v4; its
+  correctors deliberately use MATLAB built-in linear algebra only.
+- Standardized `slope_max = 4e5` in the v3 solver parameter files and updated the guides.
+- Updated the Suite Overview, README, citation metadata, notices, and User Guides for both
+  v4 releases.
+
 ## 2026.07.12
 
 Compared with the publicly released `HEBCPF` baseline:
