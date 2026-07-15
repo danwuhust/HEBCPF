@@ -1,6 +1,8 @@
-# Keep generated and compiled MATLAB artifacts out of text diffs and line-ending conversion.
+*.m text eol=lf
+*.md text eol=lf
+*.tex text eol=lf
+*.cff text eol=lf
+*.csv text eol=lf
+*.mexw64 binary
 *.pdf binary
 *.mat binary
-*.mexw64 binary
-*.mexa64 binary
-*.mexmaci64 binary

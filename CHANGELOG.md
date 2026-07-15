@@ -2,6 +2,20 @@
 
 All notable changes to HEBCPF are documented here.
 
+## 2026.07.15
+
+This benchmarked maintenance release packages the v4 solver line:
+
+- Added `HEBCPF_MEX_v4_20260715`, the Windows x64 MEX-accelerated v4 solver.
+- Added `HEBCPF_matlab_v4_20260715`, the portable pure MATLAB v4 solver.
+- Added tested checkpoint/resume support for long parallel searches through
+  `temp_result.mat`.
+- Added a completed 20-case queue-`parfeval` benchmark through 57 buses,
+  including solution-set cross-checks between the MEX and pure MATLAB v4
+  packages.
+- Reworked the suite overview and both user guides with the benchmark results
+  and an explicit distinction from the 2026.07.14 v4 release.
+
 ## 2026.07.14
 
 - Added `HEBCPF_MEX_v4_20260714` and `HEBCPF_matlab_v4_20260714`, performance-optimized
@@ -10,7 +24,7 @@ All notable changes to HEBCPF are documented here.
   one in-flight trace per equation; retained the old scheduler as
   `runVBook_hybrid_parfeval_barrier.m`.
 - Added cached sparse LU ordering, sparse holomorphic-assembly reuse, and allocation-free
-  Pad\'e polynomial evaluation in MEX v4.
+  Pade polynomial evaluation in MEX v4.
 - Added the same queue scheduler and holomorphic-kernel optimizations to MATLAB v4; its
   correctors deliberately use MATLAB built-in linear algebra only.
 - Standardized `slope_max = 4e5` in the v3 solver parameter files and updated the guides.

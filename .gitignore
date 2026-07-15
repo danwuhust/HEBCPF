@@ -1,34 +1,25 @@
-# MATLAB autosave and temporary files
+# MATLAB generated files
 *.asv
 *.m~
-*.mlx.autosave
-*.tmp
-*.temp
-*.log
+temp_result.mat
+my_checkpoint.mat
+*_checkpoint.mat
+checkpoint*.mat
 
-# MATLAB generated folders
-slprj/
-codegen/
-html/
+# Generated solver summaries
+results_summary.csv
+results_par_summary.csv
+results_parfeval_summary.csv
 
-# MATLAB Coder and MEX build byproducts
-*_mex.c
-*_mex.cpp
-*_mex.h
-*_mex.obj
-*_mex.o
-*_mex.lib
-*_mex.exp
-*_mex.map
-*_mex.pdb
-*_mex.mexa64
-*_mex.mexmaci64
-*.mexw64.manifest
+# Generated benchmark artifacts. Keep only the completed release report and
+# combined CSV; logs, snapshots, MATLAB records, and incomplete attempts stay local.
+benchmark_results_20260715/*
+!benchmark_results_20260715/20260715_194046/
+benchmark_results_20260715/20260715_194046/*
+!benchmark_results_20260715/20260715_194046/BENCHMARK_SUMMARY.md
+!benchmark_results_20260715/20260715_194046/benchmark_summary_all.csv
 
-# Source wrapper for the optional KLU refactor MEX; keep it in Git releases.
-!klurf/klurf_mex.c
-
-# LaTeX build byproducts
+# LaTeX intermediates
 *.aux
 *.log
 *.out
@@ -37,24 +28,7 @@ html/
 *.fdb_latexmk
 *.synctex.gz
 
-# HEBCPF batch outputs
-results_summary.csv
-results_par_summary.csv
-results_parfeval_summary.csv
-
-# Parallel/cache artifacts
-Job*/
-parallel_*/
-local_cluster_jobs/
-
-# OS/editor metadata
+# OS/editor noise
 .DS_Store
 Thumbs.db
 desktop.ini
-.vscode/
-.idea/
-
-# Archives created for release upload
-*.zip
-*.tar
-*.tar.gz

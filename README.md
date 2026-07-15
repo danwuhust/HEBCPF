@@ -1,114 +1,157 @@
-# HEBCPF Solver Suite
+# HEBCPF Solver Suite 2026.07.15
 
 HEBCPF is a MATLAB solver suite for finding all real-valued solutions of AC
 power-flow equations. It combines an ellipsoidal formulation, holomorphic
 embedding, Pade approximation, and numerical continuation.
 
-This package release is **2026.07.14**. It updates the publicly released
-`HEBCPF` baseline, preserves the v2/v3 solver lines, and adds MEX v4 and pure MATLAB v4.
+This release contains the v4 solver line in two forms:
 
-## Releases
+| Folder | Solver | Best Use |
+| --- | --- | --- |
+| `HEBCPF_MEX_v4_20260715` | Windows x64 MEX-accelerated v4 | Fastest release on supported Windows MATLAB installations |
+| `HEBCPF_matlab_v4_20260715` | Pure MATLAB v4 | Portable, inspectable, no compiler or MEX binaries required |
 
-| Folder | Solver line | Orientation | Platform |
-| --- | --- | --- | --- |
-| `HEBCPF_MEX_v4_20260714` | v4.20260714 | Performance-optimized compiled build | Windows x64 MATLAB, or rebuild MEX |
-| `HEBCPF_matlab_v4_20260714` | v4.20260714 | Performance-optimized pure MATLAB build | Cross-platform |
-| `HEBCPF_MEX_v3.20260712` | v3.202606 | Robustness-oriented compiled build | Windows x64 MATLAB, or rebuild MEX |
-| `HEBCPF_matlab_v3.20260712` | v3.202606 | Robustness-oriented pure MATLAB build | Cross-platform |
-| `HEBCPF_MEX_v2.20260712` | v2.202607 | Efficiency-oriented compiled build | Windows x64 MATLAB, or rebuild MEX |
-| `HEBCPF_matlab_v2.20260712` | v2.202607 | Efficiency-oriented pure MATLAB build | Cross-platform |
+Both solvers use the same v4 numerical settings, including consensus Pade-pole
+selection, deterministic keyed deduplication, `slope_max = 4e5`, and the v4
+asynchronous `parfeval` work queue. The MEX release also includes a retained
+barrier-style `parfeval` driver for A/B comparison.
 
-Use v3 for hard, large, meshed, or fold-dense systems. Use v2 when speed is
-the priority on well-behaved systems. MEX builds provide precompiled Windows
-x64 hot paths; pure MATLAB builds are portable and easy to inspect or modify.
-
-See [HEBCPF_Suite_Overview.pdf](HEBCPF_Suite_Overview.pdf) for the complete
-comparison and the `HEBCPF_User_Guide.pdf` inside each release folder for
-installation, parameters, and troubleshooting.
+Release 2026.07.15 is the benchmarked maintenance release of the v4 line. It
+retains the 2026.07.14 formulation and numerical settings, while adding tested
+checkpoint/resume behavior for long parallel searches. Older v2/v3 and v4
+packages remain available through their GitHub tags for historical
+reproduction; add only one solver folder to the MATLAB path at a time.
 
 ## Requirements
 
-- MATLAB R2022a or later. Package 2026.07.14 was validated with MATLAB R2022a.
-- MATPOWER 7.1 installed and on the MATLAB path.
-- Parallel Computing Toolbox for `run_batch_par.m` and `run_batch_parfeval.m`.
-- MATLAB Coder and a supported C compiler only when rebuilding MEX functions.
+- MATLAB R2022a or later. This release was prepared and checked with MATLAB
+  R2022a.
+- MATPOWER 7.1 or a compatible MATPOWER release on the MATLAB path.
+- Parallel Computing Toolbox for `run_batch_par.m`, `run_batch_parfeval.m`,
+  `runVBook_hybrid_parallel.m`, and `runVBook_hybrid_parfeval.m`.
+- MATLAB Coder and a supported C compiler only if rebuilding MEX binaries.
 
 HEBCPF calls MATPOWER's installed `runpf`, `makeYbus`, `idx_bus`, and
-`idx_brch`. It does not redistribute a local `makeY.m` or MATPOWER's
-`makeYbus.m`.
+`idx_brch`. It does not redistribute MATPOWER itself.
+
+## Benchmark Results
+
+The released queue-`parfeval` benchmark covers all 20 bundled cases through
+57 buses at nominal load, using MATLAB R2022a on Windows x64 with 23 local
+workers. Parallel-pool startup was excluded from per-case timing.
+
+| Solver | Cases | Total wall time | Trace wall time | Total solutions |
+| --- | ---: | ---: | ---: | ---: |
+| MEX v4 | 20 | 718.656 s | 716.062 s | 3256 |
+| Pure MATLAB v4 | 20 | 1272.966 s | 1271.222 s | 3256 |
+
+MEX v4 used 1.77x less aggregate wall time and was faster on 14 cases. The
+pure MATLAB package was faster on six small cases, where overhead dominates.
+Every case had matching solution counts; an order-independent solution-set
+check had maximum nearest-solution distance `3.154e-7`, below the shared
+deduplication tolerance of `4e-7`. These figures compare the two 2026.07.15
+v4 packages only, not earlier releases or other hardware/platforms.
+
+Run `run_benchmark_up_to_57bus_20260715` to reproduce the experiment. The
+committed report and CSV are in
+`benchmark_results_20260715/20260715_194046/`; full per-case results appear
+in `HEBCPF_Suite_Overview.pdf`.
 
 ## Quick Start
 
-1. Install MATLAB and MATPOWER, then confirm:
+Use exactly one solver folder on the MATLAB path at a time because the MEX and
+pure MATLAB folders contain many functions and cases with the same names.
 
-   ```matlab
-   which runpf
-   which makeYbus
-   ```
+```matlab
+cd('<path_to_HEBCPF>/HEBCPF_MEX_v4_20260715')       % or HEBCPF_matlab_v4_20260715
+addpath(pwd)
 
-2. Choose exactly one release folder. For example:
+% one case, recommended large-case mode
+[result, solutions] = run_merged_case('case14mod', 'parfeval');
+result
+```
 
-   ```matlab
-   cd('<path_to_HEBCPF>/HEBCPF_matlab_v4_20260714')
-   addpath(pwd)
-   [result, solutions] = run_merged_case('case9', 'serial');
-   result
-   ```
+Available modes are:
 
-3. For a single programmatic run:
+- `serial`: no Parallel Computing Toolbox; easiest to debug.
+- `parfor`: synchronous parallel batch per starting solution.
+- `parfeval`: asynchronous work queue; recommended for larger systems.
 
-   ```matlab
-   r = run_merged_case('case14mod', 'parfeval');
-   r.solutions
-   r.max_residual
-   r.wall_time
-   ```
+Batch entry points are `run_batch.m`, `run_batch_par.m`, and
+`run_batch_parfeval.m`.
 
-Do not add multiple HEBCPF release folders to the MATLAB path at the same time:
-they contain functions and cases with overlapping names.
+## Resuming A Ceased Search
 
-## KLU Acceleration
+The v4 runbook scripts write periodic checkpoints to `temp_result.mat` during
+long `parfor` and `parfeval` runs. If MATLAB, the machine, or a long job stops
+after this file has appeared, resume from the same solver folder:
 
-The bordered Newton corrector supports a sparse-core Schur-complement solve
-with SuiteSparse/KLU symbolic-once refactorization through `klurf`.
+```matlab
+cd('<path_to_HEBCPF>/HEBCPF_MEX_v4_20260715')       % same folder used originally
+addpath(pwd)
 
-- MEX releases include `klurf.mexw64` and enable it automatically on Windows x64.
-- MATLAB v2 and MATLAB v3 can use a compatible `klurf` binary when one is placed in
-  the release folder. MATLAB v4 deliberately uses MATLAB built-ins only and ignores
-  `klurf`, even when it is present on the path.
-- The `global USEKLU` override applies to MEX releases and optional-KLU MATLAB v2/v3:
+% First run main.m or equivalent preprocessing for the same case/load setting.
+% Then load the saved solver state and run the same collection driver.
+load temp_result.mat
+wait = 0;
+run('runVBook_hybrid_parfeval.m')                   % or runVBook_hybrid_parallel.m
+```
 
-  ```matlab
-  USEKLU = 0;   % dense bordered solve
-  USEKLU = 1;   % KLU full factorization; requires klu.mexw64
-  USEKLU = 2;   % KLU symbolic-once refactor; requires klurf
-  USEKLU = [];  % auto: klurf when available, otherwise dense
-  ```
+For the serial driver, save the workspace manually before stopping:
 
-## Outputs and Validation
+```matlab
+save('my_checkpoint.mat', '-v7.3')
+```
 
-`run_merged_case` returns the number of solutions, the maximum algebraic
-residual, and wall-clock time. The batch drivers write ignored CSV summaries:
-`results_summary.csv`, `results_par_summary.csv`, and
-`results_parfeval_summary.csv`.
+then resume with:
 
-The package was checked with MATLAB R2022a and MATPOWER 7.1. The documented MATLAB v4
-validation record is in `HEBCPF_matlab_v4_20260714/README_v4_pure.md` and the Suite
-Overview. For reproducible long runs, use the checkpoint instructions in the User Guide;
-large MATLAB checkpoints should use `-v7.3`.
+```matlab
+load my_checkpoint.mat
+wait = 0;
+run('runVBook_hybrid_2023.m')
+```
+
+Resume checkpoints are framework-specific. Resume a `parfeval` checkpoint with
+`runVBook_hybrid_parfeval.m`, a `parfor` checkpoint with
+`runVBook_hybrid_parallel.m`, and a serial checkpoint with
+`runVBook_hybrid_2023.m`. The case, load factor, and solver folder must match
+the original run.
+
+## Documentation
+
+- `HEBCPF_Suite_Overview.pdf`: release-level orientation and solver comparison.
+- `HEBCPF_MEX_v4_20260715/HEBCPF_User_Guide.pdf`: MEX solver guide.
+- `HEBCPF_matlab_v4_20260715/HEBCPF_User_Guide.pdf`: pure MATLAB solver guide.
+- `HEBCPF_MEX_v4_20260715/README_v4.md`: concise MEX v4 notes.
+- `HEBCPF_matlab_v4_20260715/README_v4_pure.md`: concise pure MATLAB v4 notes.
+
+## Outputs
+
+`run_merged_case` returns a result struct and the solution matrix. The result
+includes the case name, selected mode, number of solutions, maximum algebraic
+residual, and trace wall-clock time. Batch drivers write CSV summaries in the
+run folder:
+
+- `results_summary.csv`
+- `results_par_summary.csv`
+- `results_parfeval_summary.csv`
+
+Generated checkpoint files, temporary MATLAB outputs, and CSV timing summaries
+are ignored by the release `.gitignore`.
 
 ## Release Notes
 
-See [CHANGELOG.md](CHANGELOG.md). Package 2026.07.14 adds MEX v4 and MATLAB v4,
-including the v4 global `parfeval` queue and hot-path allocation/cache improvements.
-The KLU bordered-Newton acceleration and keyed solution collection were introduced in
-2026.07.12.
+See `CHANGELOG.md`, `RELEASE_NOTES_20260715.md`, and
+`RELEASE_CHECKLIST_20260715.md`. This release records the completed v4
+benchmark and adds tested checkpoint/resume support for long searches. The
+queue scheduler, cached holomorphic operations, and lower-allocation Pade
+evaluation are inherited v4 features.
 
 ## License, Attribution, and Citation
 
-HEBCPF is distributed under the BSD 3-Clause License. See [LICENSE](LICENSE).
+HEBCPF is distributed under the BSD 3-Clause License. See `LICENSE`.
 MATPOWER and SuiteSparse/KLU remain third-party software under their own terms;
-see [NOTICE](NOTICE) and the individual source notices.
+see `NOTICE` and the individual source notices.
 
 If you use HEBCPF, cite the HEBC paper and, when appropriate, this software
-package through [CITATION.cff](CITATION.cff).
+package through `CITATION.cff`.

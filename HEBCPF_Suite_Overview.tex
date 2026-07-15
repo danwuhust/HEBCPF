@@ -3,485 +3,378 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{lmodern}
 \usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{longtable}
-\usepackage{array}
 \usepackage{xcolor}
-\usepackage{graphicx}
 \usepackage{listings}
 \usepackage{enumitem}
 \usepackage{fancyhdr}
-\usepackage[hidelinks,colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
+\usepackage[hidelinks,colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black,citecolor=blue!55!black]{hyperref}
 \usepackage[strings]{underscore}
 \usepackage{xurl}
-\newcommand{\doi}[1]{\href{https://doi.org/#1}{\nolinkurl{#1}}}
 
 \definecolor{codebg}{RGB}{245,245,248}
 \definecolor{rule}{RGB}{40,60,120}
-\definecolor{v2col}{RGB}{150,75,0}
-\definecolor{v3col}{RGB}{0,90,40}
-\definecolor{okgreen}{RGB}{0,120,50}
-\definecolor{warnamber}{RGB}{170,110,0}
-
-\lstdefinestyle{sh}{basicstyle=\ttfamily\small,backgroundcolor=\color{codebg},frame=single,
-  rulecolor=\color{rule!30},breaklines=true,columns=fullflexible,keepspaces=true,
-  showstringspaces=false,xleftmargin=8pt,aboveskip=6pt,belowskip=6pt}
-\lstset{style=sh}
+\definecolor{mexcol}{RGB}{0,70,140}
+\definecolor{matcol}{RGB}{0,120,80}
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\yes}{\textcolor{okgreen}{\textbf{yes}}}
-\newcommand{\no}{\textcolor{warnamber}{no}}
+
+\lstdefinestyle{sh}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{rule!30},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+\lstdefinestyle{mat}{style=sh}
+\lstset{style=sh}
 
 \pagestyle{fancy}\fancyhf{}
-\lhead{\small HEBCPF Solver Suite}\rhead{\small Overview \& Selection Guide}
-\cfoot{\small\thepage}\renewcommand{\headrulewidth}{0.4pt}
+\lhead{\small HEBCPF Solver Suite 2026.07.15}
+\rhead{\small Overview}
+\cfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
 
-\setlength{\parskip}{4pt}\setlength{\parindent}{0pt}
-
-% ---- looser line breaking so long code tokens/lists do not overrun the margin ----
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
 \tolerance=3000
 \emergencystretch=3em
 
 \begin{document}
 
-% ===================== TITLE =====================
+\pagenumbering{gobble}
 \begin{titlepage}
 \centering
 \vspace*{2.0cm}
 {\color{rule}\rule{\textwidth}{1.2pt}}\\[8pt]
-{\Huge\bfseries HEBCPF Solver Suite}\\[10pt]
-{\LARGE Overview and Version Selection Guide}\\[10pt]
-{\color{rule}\rule{\textwidth}{1.2pt}}\\[16pt]
-{\large\itshape Finding \emph{all} real-valued solutions of the AC power-flow equations}\\[4pt]
-{\large\itshape Ellipsoidal Formulation + Holomorphic Embedding + Pad\'e + Numerical Continuation}\\[26pt]
+{\Huge\bfseries HEBCPF Solver Suite}\\[8pt]
+{\Large Release 2026.07.15}\\[8pt]
+{\color{rule}\rule{\textwidth}{1.2pt}}\\[18pt]
+{\large Holomorphic-Embedding-Based Continuation Power-Flow All-Solutions Solver}\\[12pt]
+{\large v4 MEX and pure-MATLAB release}\\[30pt]
 
-{\large This guide compares the \textbf{six} packaged releases and helps you pick one.}\\[18pt]
-
-{\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-Release folder & Orientation\\
-\midrule
-\code{HEBCPF_MEX_v4_20260714}    & Performance-optimized compiled build, Windows x64\\
-\code{HEBCPF_matlab_v4_20260714} & Performance-optimized portable build, any OS\\
-\code{HEBCPF_MEX_v3.20260712}    & Robustness-oriented, compiled --- hardened config, Windows x64\\
-\code{HEBCPF_matlab_v3.20260712} & Robustness-oriented, portable --- hardened config, any OS\\
-\code{HEBCPF_MEX_v2.20260712}    & Efficiency-oriented, compiled --- legacy-fast config, Windows x64\\
-\code{HEBCPF_matlab_v2.20260712} & Efficiency-oriented, portable --- legacy-fast config, any OS\\
-\bottomrule
+\begin{tabular}{rl}
+\textbf{Compiled solver:} & \code{HEBCPF_MEX_v4_20260715}\\[3pt]
+\textbf{Portable solver:} & \code{HEBCPF_matlab_v4_20260715}\\[3pt]
+\textbf{Default choice:} & MEX v4 on supported Windows x64; pure MATLAB v4 otherwise\\[3pt]
+\textbf{Checkpoint file:} & \code{temp_result.mat}\\
 \end{tabular}
-}
 
 \vfill
-{\small Solver lines are v4.20260714, v3.202606, and v2.202607; this package release is dated 2026.07.14.}\\[6pt]
-{\small Each release also ships its own detailed \code{HEBCPF_User_Guide.pdf}. When you
-publish results, cite the HEBC paper (Section~\ref{sec:cite}).}\\[6pt]
-{\small Package release: July 14, 2026}
+{\small This overview is a release-level map. Each solver folder contains its own
+\code{HEBCPF_User_Guide.pdf} with installation, parameters, and resume details.}\\[6pt]
+{\small July 15, 2026}
 \end{titlepage}
 
+\clearpage
+\pagenumbering{arabic}
 \tableofcontents
 \newpage
 
-% ===================== 1 =====================
-\section{What all six releases have in common}
-Every release implements the \textbf{same method} --- the Holomorphic Embedding Based
-Continuation (HEBC) all-solutions power-flow tracer --- and returns the same solution set
-on the completed benchmark cases. They also share:
-\begin{itemize}[leftmargin=1.4em]
-  \item the same dependency: MATLAB + MATPOWER (\code{runpf} for the initial point
-        and \code{makeYbus} for the bus-admittance matrix);
-  \item the same three execution frameworks --- serial (\code{run_batch.m}),
-        \code{parfor} (\code{run_batch_par.m}), and \code{parfeval}
-        (\code{run_batch_parfeval.m}, recommended for large cases);
-  \item the same single-case programmatic harness \code{run_merged_case};
-  \item identical bundled test systems and the same published solution-count references
-        (Table~\ref{tab:counts});
-  \item the same bordered-Newton formulation on the numerical hot path. MEX releases use the
-        KLU symbolic-once refactorisation, which keeps the \emph{exact} Jacobian and scales
-        to ${\sim}7.5\times$ on \code{case118}. MATLAB v2/v3 can use a compatible
-        \code{klurf} MEX; MATLAB v4 deliberately uses MATLAB built-ins only.
-\end{itemize}
-On completed benchmark cases, \textbf{the choice between releases is about
-\emph{robustness}, \emph{speed}, and \emph{platform} --- never about correctness of the
-answer on well-behaved systems.}
+\section{Release Scope}
 
-\begin{table}[h]\centering\small
-\caption{Reference number of real solutions (antipodal pairs collapsed). Values through
-\code{case57} are completed benchmarks; \code{case118} is a partial enumeration, not a
-claimed total.}\label{tab:counts}
-\begin{tabular}{@{}lr@{\qquad}lr@{}}
+This release packages the v4 HEBCPF solver in two forms:
+
+\begin{center}
+\begin{tabular}{@{}p{0.28\textwidth}p{0.28\textwidth}p{0.34\textwidth}@{}}
 \toprule
-System & \# sol. & System & \# sol.\\
+\textbf{Folder} & \textbf{Solver} & \textbf{Use it when}\\
 \midrule
-\code{case3}      & 6  & \code{case14mod}         & 30\\
-\code{case4gs}    & 6  & \code{case33bw}          & 16\\
-\code{case4BB0}   & 14 & \code{case39}            & 176\\
-\code{case4BBc}   & 12 & \code{case30}/\code{case_ieee30} & 472\\
-\code{case5loop}  & 10 & \code{case57mod}         & 606\\
-\code{case5Salam} & 10 & \code{case57}            & 1322\\
-\code{case6ww}    & 6  & \code{case118}           & $>1.5\times10^{6}$ (partial)\\
-\code{case7Salam} & 4  & &\\
-\code{case9}/\code{case9Q} & 8 & &\\
+\textcolor{mexcol}{\code{HEBCPF_MEX_v4_20260715}} & Windows x64 MEX-accelerated v4 &
+You want the fastest shipped build on a supported Windows MATLAB installation.\\
+\textcolor{matcol}{\code{HEBCPF_matlab_v4_20260715}} & Pure MATLAB v4 &
+You need portability, easier inspection, or a no-compiler/no-MEX workflow.\\
 \bottomrule
 \end{tabular}
-\end{table}
-
-\section{Changes in package release 2026.07.14}
-Compared with the publicly released \code{HEBCPF} baseline folders (solver lines
-\code{v2.202607} and \code{v3.202606}), this package keeps the HEBC formulation and the
-v2/v3 numerical configurations unchanged. Package 2026.07.12 added:
-\begin{itemize}[leftmargin=1.4em]
-  \item the bordered Newton corrector now has a sparse-core Schur-complement path with
-        SuiteSparse/KLU symbolic-once refactorisation. The MEX releases include
-        \code{klurf.mexw64}; the top-level \code{klurf/} folder provides the source and
-        build helper for other MEX platforms or for the optional-KLU MATLAB v2/v3 releases;
-  \item keyed bucket lookup accelerates repeated-solution collection in the serial,
-        \code{parfor}, and \code{parfeval} collectors;
-  \item geometric \code{Zsave} growth avoids repeated full-array copies while collecting
-        newly discovered solutions;
-  \item the Jacobian cache has a lower-overhead hot path after its per-trace initialisation.
-\end{itemize}
-
-Package 2026.07.14 adds the compiled \code{HEBCPF_MEX_v4_20260714} release. Relative to
-MEX v3, v4 uses a global per-equation \code{parfeval} queue, caches the sparse LU ordering
-of the holomorphic matrix, reuses sparse holomorphic-assembly invariants, and evaluates
-Pad\'e polynomials with matrix-vector products instead of replicated temporary matrices.
-The prior barrier scheduler remains available as \code{runVBook_hybrid_parfeval_barrier.m}
-for controlled comparisons.
-The same release also adds \code{HEBCPF_matlab_v4_20260714}: the portable counterpart
-retains those v4 scheduling and holomorphic-kernel optimizations while using MATLAB built-in
-linear algebra exclusively in its correctors.
-
-% ===================== 2 =====================
-\section{The two axes of choice}
-The v2/v3 releases are the combinations of two independent choices. MEX v4 and pure MATLAB
-v4 are performance-optimized successors to their v3 counterparts and keep the v3 numerical
-configuration.
-
-\subsection*{Axis 1 --- \textcolor{v2col}{v2 (legacy-fast)} vs.\ \textcolor{v3col}{v3 (validated / robust)}}
-This is the important one. \textbf{v2} is the fast legacy configuration; \textbf{v3} is the
-robustness-hardened configuration developed and validated to eliminate the numerical
-failures (wrong-branch drift, non-closing loops) that the legacy settings can hit on sharp
-or fold-dense curves.
-
-\begin{center}\footnotesize
-\renewcommand{\arraystretch}{1.25}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.21\textwidth}
-                   >{\raggedright\arraybackslash}p{0.34\textwidth}
-                   >{\raggedright\arraybackslash}p{0.36\textwidth}@{}}
-\toprule
-\textbf{Aspect} & \textcolor{v2col}{\textbf{v2 --- legacy-fast}} & \textcolor{v3col}{\textbf{v3 --- validated / robust}}\\
-\midrule
-Settings location & inlined in \code{hybrid_traceloops} & centralised in \code{solver_params.m}\\
-Turning-point slope limit (\code{slope_max}) & \code{4e5} & \code{4e5} --- shared release default\\
-Hand-back hysteresis (\code{handback}) & \code{0.1} & \code{0.5} --- clears the fold first\\
-Fold initial-step cap (\code{init_cap_k}) & \emph{none} & \code{1500}\\
-Adaptive step cap (\code{max_adapt}) & \emph{none} & \code{true} --- secant-slope driven\\
-Pad\'e pole estimate & consensus (\code{'fixed'}/\code{'random'} toggle) & consensus, fixed bus set \code{2:6}\\
-Speed & \textcolor{v2col}{faster ($\approx$10--20\% in parfeval)} & modestly slower in parfeval\\
-Robustness & may stall (500-cap) on hard curves & \textcolor{v3col}{hardened by fold-step and hand-back safeguards}\\
-\bottomrule
-\end{tabular}
-}
 \end{center}
 
-Both give the same counts on well-behaved systems. The difference shows up on
-\emph{hard} curves (sharp thin-sliver folds, fold-dense loops --- e.g.\ some case118,
-case30 and case57mod curves): v2 may burn its alternation cap on a wrong/non-closing branch
-(costing time; the solution is still found by a neighbouring trace so the \emph{count}
-stays exact), whereas v3 keeps the trace on the true branch by adding the three safeguards
-below.
+Both solvers use the same HEBC formulation, MATPOWER-format cases, v4 numerical
+parameters, and user-facing drivers. They should not be placed on the MATLAB path at the
+same time because they contain functions with overlapping names.
 
-\subsection*{The extra conditions and criteria in v3 (absent in v2)}
-Every safeguard acts \emph{only near singular points} (turning points / folds) and during
-the hand-off between the holomorphic and continuation routines. With the shared
-\code{slope_max = 4e5} default, the three
-additional v3 safeguards are:
+\subsection{Relationship to earlier releases}
+Release 2026.07.15 is a benchmarked maintenance release of the v4 line, not a new
+mathematical method. Relative to the 2026.07.14 v4 release, it retains the formulation,
+numerical defaults, compiled hot paths, and queue scheduler; the substantive driver change
+is serializable checkpoint/resume support for long \code{parfor} and queue \code{parfeval}
+runs, plus the retained MEX barrier driver. Earlier v2/v3 packages and the 2026.07.14 v4
+package remain useful for reproducing historical results and are available through the
+corresponding GitHub tags. Do not mix solver folders from different releases on one MATLAB
+path.
 
-\begin{enumerate}[leftmargin=1.5em]
-  \item \textbf{Fold-proximity initial-step cap} (\code{init_cap_k = 1500}). When the
-        holomorphic routine hands over to the continuation near a fold, the holomorphic arc
-        that just collapsed, \code{holo_arc}, is a proxy for how close the fold is. v3 caps
-        the \emph{first} continuation step to \code{astep <= init_cap_k * holo_arc / sstep}:
-        a near-fold hand-off (small \code{holo_arc}) forces a small, careful first step,
-        while a smooth hand-off (large \code{holo_arc}) is left at full step. v2 has no such
-        cap, so its first step can be large enough to jump the fold onto the adjacent (wrong)
-        branch.
-  \item \textbf{Secant-slope adaptive per-step cap} (\code{max_adapt = true}). At every
-        continuation step v3 measures the two-point secant slope
-        $s_k=\lVert\Delta\text{state}\rVert/\lvert\Delta\alpha\rvert$ and caps the next step
-        by how fast that slope is changing:
-        \code{astep <= maximumstep * min(s_prev/s, 1)}. As the curve steepens toward a fold
-        ($s$ rising) the ceiling tightens automatically; once the fold is passed it relaxes
-        back to the full \code{maximumstep}. v2 has no curvature-aware per-step cap.
-  \item \textbf{Larger hand-back hysteresis} (\code{handback}: \code{0.5} in v3 vs \code{0.1}
-        in v2). Before handing back, the continuation must travel
-        \code{handback}\,$\times$\,\code{aal_min} \emph{past} the homotopy-parameter
-        ($\alpha$) reversal, so the near-singular zone is fully cleared. v3 clears five times
-        as much of that zone as v2, which is what stops the curve being pulled back onto an
-        adjacent branch on the holomorphic restart.
-\end{enumerate}
-Because these fire only near singularities, v3's overall speed cost is small
-(Section~\ref{sec:timing}) while its robustness gain on hard curves is decisive.
+\section{Core v4 Features}
 
-\subsection*{Axis 2 --- MEX vs.\ MATLAB (pure)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Consensus Pad\'e-pole selection.} The holomorphic-to-continuation hand-off
+        uses a pole estimate agreed across several buses, reducing spurious single-bus pole
+        choices.
+  \item \textbf{Deterministic keyed deduplication.} Candidate solutions are matched with a
+        fixed random signature and an L1 tolerance, avoiding the old linear scan over the
+        full solution matrix.
+  \item \textbf{\code{slope_max = 4e5}.} The v4 folders ship with the requested turning
+        point slope threshold in \code{solver_params.m} and in the parallel runbooks.
+  \item \textbf{Global \code{parfeval} work queue.} The recommended driver keeps one
+        in-flight trace per equation and submits new work as soon as a worker finishes.
+        This preserves \code{VBook} pruning while avoiding row-barrier idle time.
+  \item \textbf{Checkpoint/resume support.} Long parallel searches periodically save
+        \code{temp_result.mat}; resuming rebuilds futures, pools, and deduplication state.
+  \item \textbf{Cached/vectorized hot path.} V4 reduces repeated sparse analysis,
+        holomorphic assembly work, and Pad\'e allocation overhead.
+\end{itemize}
+
+\section{Choosing A Solver}
+
+\begin{center}
+\begin{tabular}{@{}p{0.28\textwidth}p{0.31\textwidth}p{0.31\textwidth}@{}}
+\toprule
+\textbf{Question} & \textbf{MEX v4} & \textbf{Pure MATLAB v4}\\
+\midrule
+Windows x64 MATLAB? & Recommended. Shipped \code{.mexw64} binaries are included. &
+Works, but generally slower.\\
+Linux or macOS? & Rebuild MEX binaries first, or use pure MATLAB. &
+Recommended out of the box.\\
+Need to inspect or modify hot-path code? & Possible, but rebuild if changing MEX source. &
+Recommended for experimentation.\\
+Need maximum speed? & Recommended. & Use when portability matters more than speed.\\
+Need no compiler? & Works on Windows x64 with shipped binaries. &
+Always works without a compiler.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Benchmark Comparison}\label{sec:benchmark}
+
+The released benchmark compares the two shipped v4 packages, not earlier solver releases.
+It ran the queue \code{parfeval} driver at nominal load on all 20 bundled cases through
+57 buses using MATLAB R2022a on \code{PCWIN64} with 23 local workers. Parallel-pool startup
+(44.46~s) was performed once before the timed loop and is excluded; the reported per-case
+wall times include preprocessing and tracing. The benchmark driver is
+\code{run_benchmark_up_to_57bus_20260715.m}; the committed machine-readable results are in
+\code{benchmark_results_20260715/20260715_194046/benchmark_summary_all.csv}.
+
 \begin{center}\small
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.235\textwidth}
-                   >{\raggedright\arraybackslash}p{0.335\textwidth}
-                   >{\raggedright\arraybackslash}p{0.345\textwidth}@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-\textbf{Aspect} & \textbf{MEX build} & \textbf{MATLAB (pure) build}\\
+\textbf{Solver} & \textbf{Cases} & \textbf{Total wall (s)} & \textbf{Trace wall (s)} & \textbf{Solutions}\\
 \midrule
-Hot path      & 2 compiled MEX (\code{Pade_Apprxmt}, \code{holomorphic_cont_tri}) & plain \code{.m} only\\
-Bordered solve & KLU symbolic-once refactor --- \code{klurf.mexw64} shipped, on by default & MATLAB v4: built-in \code{\textbackslash}; MATLAB v3/v2: built-in or compatible \code{klurf}\\
-Serial speed  & \textbf{$\approx 2\times$ faster} & baseline\\
-Platform      & Windows 64-bit (shipped binaries) & \textbf{any} --- Windows / Linux / macOS\\
-Compiler      & MATLAB Coder, only to rebuild or port & none, ever\\
-Extra files   & \code{*.mexw64}, \code{build_mex.m}, \code{examples.mat} & \emph{none}\\
-Numerical result & \multicolumn{2}{c}{\emph{identical} (verified to $\sim 10^{-13}$)}\\
+MEX v4 & 20 & 718.656 & 716.062 & 3256\\
+Pure MATLAB v4 & 20 & 1272.966 & 1271.222 & 3256\\
 \bottomrule
 \end{tabular}
 \end{center}
-The MEX and MATLAB builds of the \emph{same} version are designed to return interchangeable,
-bit-comparable solution sets; MEX is primarily a speed/platform choice. MATLAB v4 deliberately
-keeps its corrector path pure MATLAB and never calls \code{klurf}.
 
-% ===================== 3 =====================
-\section{Choosing a release}
-All six releases are intended to return the same solution set. \textbf{When no specific
-compatibility, legacy-reproduction, or platform preference applies, choose v4 as the default
-solver}: choose \textbf{MEX v4} on supported Windows x64 installations, and choose
-\textbf{MATLAB v4} on other platforms or when a pure-MATLAB implementation is preferred.
-The v3 and v2 releases remain available as established and legacy reference configurations.
+Across the complete suite, the MEX package took $1.77\times$ less wall-clock time
+(43.5\% less elapsed time) and was faster on 14 of 20 cases. This is a package-level
+comparison: MEX v4 uses the compiled Pad\'e/holomorphic kernels and its shipped KLU path,
+whereas pure MATLAB v4 uses only \code{.m} code and its dense corrector. Very small cases
+are overhead-sensitive, so pure MATLAB was faster on six of them; do not treat the aggregate
+ratio as a platform-independent or serial-mode speedup.
+
+Both solvers returned the same solution count for every case. A one-to-one, order-independent
+comparison of the saved solution sets gave a maximum nearest-solution distance of
+$3.154\times10^{-7}$, below the shared keyed-deduplication tolerance of \code{4e-7}.
+
+\begin{center}\small
+\begin{longtable}{@{}lrrrrr@{}}
+\toprule
+\textbf{Case} & \textbf{Buses} & \textbf{Solutions} & \textbf{MEX (s)} & \textbf{MATLAB (s)} & \textbf{Ratio}\\
+\midrule
+\endhead
+\code{case3} & 3 & 6 & 1.128 & 0.621 & 0.55$\times$\\
+\code{case3TS} & 3 & 6 & 0.313 & 0.332 & 1.06$\times$\\
+\code{case4BB0} & 4 & 14 & 1.023 & 0.767 & 0.75$\times$\\
+\code{case4BBc} & 4 & 12 & 2.025 & 0.409 & 0.20$\times$\\
+\code{case4gs} & 4 & 6 & 0.352 & 0.356 & 1.01$\times$\\
+\code{case5loop} & 5 & 10 & 0.595 & 0.834 & 1.40$\times$\\
+\code{case5Salam} & 5 & 10 & 0.656 & 0.703 & 1.07$\times$\\
+\code{case5Salam_mod3} & 5 & 4 & 0.424 & 0.307 & 0.72$\times$\\
+\code{case6ww} & 6 & 6 & 0.623 & 0.571 & 0.92$\times$\\
+\code{case7Salam} & 7 & 4 & 0.479 & 0.456 & 0.95$\times$\\
+\code{case9} & 9 & 8 & 0.904 & 0.922 & 1.02$\times$\\
+\code{case9Q} & 9 & 8 & 0.546 & 0.700 & 1.28$\times$\\
+\code{case14mod} & 14 & 30 & 3.110 & 4.495 & 1.45$\times$\\
+\code{case14mod2} & 14 & 68 & 6.134 & 8.640 & 1.41$\times$\\
+\code{case30} & 30 & 472 & 61.776 & 93.156 & 1.51$\times$\\
+\code{case33bw} & 33 & 16 & 4.855 & 9.713 & 2.00$\times$\\
+\code{case39} & 39 & 176 & 34.870 & 58.694 & 1.68$\times$\\
+\code{case_ieee30} & 30 & 472 & 62.862 & 91.943 & 1.46$\times$\\
+\code{case57mod} & 57 & 606 & 168.996 & 305.818 & 1.81$\times$\\
+\code{case57} & 57 & 1322 & 366.985 & 693.529 & 1.89$\times$\\
+\bottomrule
+\end{longtable}
+\end{center}
+
+The ratio is MATLAB total wall time divided by MEX total wall time; values above one favour
+MEX. The full benchmark report explains the retained local logs and snapshots used for
+validation, which are intentionally not part of the GitHub release payload.
+
+\section{Choosing A Mode}
+
+Each solver has three main collection modes:
 
 \begin{description}[leftmargin=0em,style=nextline]
-\item[\textbf{MEX v4}] Choose this on supported Windows x64 installations when wall-clock
-      performance is the priority. It retains the v3 hardened numerical configuration, adds
-      the global \code{parfeval} work queue and cached hot-path kernels, and has reported
-      \code{parfeval} speed-ups of 1.21--1.59$\times$ over MEX v3 on six cases
-      (Section~\ref{sec:timing}).
-\item[\textbf{MATLAB v4}] Choose this when portability and readable \code{.m}-only code
-      matter, while still wanting the v4 scheduling and cached numerical kernels. Its
-      correctors use only MATLAB built-ins; no MEX binary, compiler, KLU, or \code{klurf}
-      dependency is required.
-\item[\textcolor{v3col}{\textbf{MEX v3 / MATLAB v3}}] Choose an established hardened v3
-      release when reproducing earlier v3 work or when the v4 changes are not desired. MEX v3
-      is the compiled Windows x64 option; MATLAB v3 is the portable option.
-\item[\textcolor{v2col}{\textbf{MEX v2 / MATLAB v2}}] Choose only for legacy reproduction or
-      for well-behaved cases where the historical v2 configuration is specifically wanted.
-      It can be faster under historical \code{parfeval} measurements, but it lacks v3/v4's
-      fold-hardening safeguards.
+\item[\code{serial}] Uses \code{runVBook_hybrid_2023.m}. It is the easiest mode to debug
+and needs no Parallel Computing Toolbox.
+\item[\code{parfor}] Uses \code{runVBook_hybrid_parallel.m}. It traces one row of
+\code{VBook} at a time and waits for all equations in that row to finish.
+\item[\code{parfeval}] Uses \code{runVBook_hybrid_parfeval.m}. It is asynchronous and keeps
+workers busy without waiting for the slowest equation in each row. This is the recommended
+mode for \code{case30}, \code{case39}, \code{case57mod}, \code{case57}, and larger systems.
 \end{description}
 
-% ===================== 4 =====================
-\section{Feature matrix}
-\begin{center}\footnotesize
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-& \code{MEX_v4} & \code{matlab_v4} & \code{MEX_v3} & \code{matlab_v3} & \code{MEX_v2} & \code{matlab_v2}\\
-\midrule
-Robustness-hardened config (v3)      & \yes & \yes & \yes & \yes & \no  & \no\\
-\code{solver_params.m} single-source & \yes & \yes & \yes & \yes & \no  & \no\\
-Fold-proximity step caps             & \yes & \yes & \yes & \yes & \no  & \no\\
-Consensus Pad\'e poles               & \yes & \yes & \yes & \yes & \yes & \yes\\
-\code{'fixed'}/\code{'random'} pole toggle & \no & \no & \no & \no & \yes & \yes\\
-Global \code{parfeval} work queue     & \yes & \yes & \no & \no & \no & \no\\
-Cached holomorphic sparse-LU ordering & \yes & \yes & \no & \no & \no & \no\\
-Reused sparse holomorphic assembly invariants & \yes & \yes & \no & \no & \no & \no\\
-Allocation-free Pad\'e evaluation     & \yes & \yes & \no & \no & \no & \no\\
-Corrector uses MATLAB built-ins only  & \no  & \yes & \no & \yes & \no & \yes\\
-Compiled MEX ($\approx 2\times$ serial) & \yes & \no & \yes & \no & \yes & \no\\
-Cross-platform (no compiler)         & \no  & \yes & \no  & \yes & \no  & \yes\\
-Serial / \code{parfor} / \code{parfeval} & \yes & \yes & \yes & \yes & \yes & \yes\\
-Identical solution counts            & \yes & \yes & \yes & \yes & \yes & \yes\\
-\bottomrule
-\end{tabular}
-}
-\end{center}
+The MEX folder also keeps \code{runVBook_hybrid_parfeval_barrier.m}. That file is a
+retained comparison driver, not the recommended default.
 
-% ===================== 5 =====================
-\section{Numerical test bed and timing comparison}\label{sec:timing}
+\section{Quick Start}
 
-\subsection{Test bed}\label{sec:testbed}
-All timings in this section were measured on a single dedicated workstation, one MATLAB
-process at a time (no concurrent jobs), to minimise interference:
-\begin{center}\small
+\begin{lstlisting}[style=mat]
+cd('<path>/HEBCPF_MEX_v4_20260715')       % or HEBCPF_matlab_v4_20260715
+addpath(pwd)
+
+which runpf
+which makeYbus
+
+[result, solutions] = run_merged_case('case14mod', 'parfeval');
+result
+\end{lstlisting}
+
+Batch entry points:
+
+\begin{center}
 \begin{tabular}{@{}ll@{}}
 \toprule
-Component & Specification\\
+\textbf{Driver} & \textbf{Mode}\\
 \midrule
-CPU & Intel Core i9-13900K --- 24 cores / 32 threads (8 performance + 16 efficiency cores)\\
-RAM & 128\,GB\\
-Operating system & Microsoft Windows 11 Pro, version 22H2 (build 22621)\\
-MATLAB & R2022a (9.12.0), \code{maxNumCompThreads} = 24\\
-Parallel pool & \code{local} profile, 23 workers\\
-Initial solve & MATPOWER 7.1 \code{runpf} (for the starting operating point)\\
-\bottomrule
-\end{tabular}
-\end{center}
-For the completed cases listed in the timing tables, solution \emph{counts} were verified
-identical across releases; only wall-clock time differs. \textbf{Serial} figures
-are a single timed run per case; \textbf{\code{parfeval}} figures are the \emph{mean of
-three back-to-back trials} on a warmed pool (the one-time $\sim$45\,s pool start-up is
-excluded). All times are the trace wall-clock returned by \code{run_merged_case}.
-
-These figures are a \emph{historical dense-bordered-solve baseline}; they are retained for
-version selection and are not an end-to-end timing claim for package 2026.07.14. The current
-MEX releases ship the \textbf{KLU symbolic-once refactor}. MATLAB v3 can use a compatible
-\code{klurf} MEX, whereas MATLAB v4 deliberately keeps its correctors on MATLAB built-ins.
-KLU further reduces time on larger systems --- a wash below \code{case30}, but up to
-${\sim}7.5\times$ on \code{case118}. See each User Guide for the applicable linear-solver
-details.
-
-\subsection{All reported MEX v4 \code{parfeval} timings}
-MEX v4 was developed against MEX v3 on the same 23-worker local-pool setup. The following
-development-time values are means of two runs, excluding pool start-up; they are included as
-a reference and were \textbf{not re-executed during this package-preparation pass}. The
-development record reports order-insensitive matching of the same solution sets through
-\code{case57}.
-\begin{center}\small
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-System & MEX v3 (s) & MEX v4 (s) & v3/v4 speed-up\\
-\midrule
-\code{case9} & 1.61 & 1.33 & 1.21$\times$\\
-\code{case14mod} & 5.57 & 3.91 & 1.42$\times$\\
-\code{case33bw} & 8.22 & 5.66 & 1.45$\times$\\
-\code{case39} & 49.93 & 38.64 & 1.29$\times$\\
-\code{case30} & 101.81 & 63.96 & 1.59$\times$\\
-\code{case57mod} & 236.43 & 175.70 & 1.35$\times$\\
+\code{run_batch.m} & serial\\
+\code{run_batch_par.m} & \code{parfor}\\
+\code{run_batch_parfeval.m} & queue \code{parfeval}\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\subsection{MATLAB v4 validation results}
-MATLAB v4 has a documented correctness-validation record, rather than a corresponding
-wall-clock timing series. The following are all recorded MATLAB v4 results from
-2026-07-14; the set errors compare MATLAB v4 with MEX v4 in both matching directions.
-\begin{center}\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-Run or comparison & Recorded result\\
-\midrule
-\code{case3}, serial & 6 solutions; maximum residual \code{1.69e-14}\\
-\code{case3}, MATLAB v4 vs.\ MEX v4 & 6 vs.\ 6; bidirectional set error \code{2.42e-14} L1\\
-\code{case9}, serial & 8 solutions; maximum residual \code{7.39e-13}\\
-\code{case9}, MATLAB v4 vs.\ MEX v4 & 8 vs.\ 8; bidirectional set error \code{2.89e-12} L1\\
-\code{case14mod}, serial & 30 solutions; maximum residual \code{9.25e-13}\\
-\code{case14mod}, MATLAB v4 vs.\ MEX v4 & 30 vs.\ 30; bidirectional set error \code{2.49e-12} L1\\
-\code{case3}, \code{parfeval} & pool started; 6 solutions; maximum residual \code{2.35e-14}\\
-\bottomrule
-\end{tabular}
-\end{center}
-No MATLAB v4 wall-clock series was supplied, so this overview makes no numerical timing
-claim for MATLAB v4 versus MATLAB v3, MEX v4, or the v2 releases. Its v4 queue and cached
-kernels are an implementation improvement; its all-MATLAB corrector is a deliberate
-portability trade-off rather than a measured speed conclusion.
+\section{Resuming A Ceased Search}
 
-\subsection{Serial timings --- single trial (seconds)}
-\begin{center}\small
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule
-System & \# sol. & \code{MEX_v2} & \code{MEX_v3} & \code{matlab_v2} & \code{matlab_v3}\\
-\midrule
-\code{case9}     & 8   & 1.4  & 1.5  & 2.0  & 2.4\\
-\code{case14mod} & 30  & 8.2  & 9.4  & 14.0 & 15.9\\
-\code{case33bw}  & 16  & 19.9 & 25.1 & 33.7 & 42.4\\
-\code{case39}    & 176 & 513  & 440  & 558  & 627\\
-\code{case30}    & 472 & 946  & 527  & 793  & 897\\
-\code{case57mod} & 606 & 4502 & 2737 & 3548 & 3984\\
-\bottomrule
-\end{tabular}
-\end{center}
+The parallel v4 runbooks write periodic checkpoints to \code{temp_result.mat}. To resume:
 
-\subsection{\code{parfeval} timings --- mean of 3 trials (seconds)}
-\begin{center}\small
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule
-System & \# sol. & \code{MEX_v2} & \code{MEX_v3} & \code{matlab_v2} & \code{matlab_v3}\\
-\midrule
-\code{case9}     & 8   & 0.6   & 0.7   & 0.9   & 1.0\\
-\code{case14mod} & 30  & 3.5   & 3.8   & 5.8   & 6.0\\
-\code{case33bw}  & 16  & 5.6   & 8.4   & 10.3  & 12.7\\
-\code{case39}    & 176 & 49.3  & 58.7  & 71.1  & 75.2\\
-\code{case30}    & 472 & 90.6  & 104.3 & 169.4 & 162.3\\
-\code{case57mod} & 606 & 268.7 & 304.9 & 408.3 & 421.1\\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\textbf{How to read these tables --- four findings.}
-\begin{enumerate}[leftmargin=1.5em]
-  \item \textbf{MEX v4 improves on MEX v3 in every recorded v4 timing.} Across all six
-        reported \code{parfeval} cases, MEX v4 is 1.21--1.59$\times$ faster than MEX v3.
-        This is the directly comparable v4 performance result: both columns use the same
-        development-time two-run, 23-worker protocol.
-  \item \textbf{Use \code{parfeval} for anything large.} On this 24-core machine parfeval is
-        \textbf{5--17$\times$} faster than serial on the big cases (e.g.\ \code{MEX_v3}
-        case57mod: 2737\,s serial $\to$ 305\,s parfeval). Serial is best reserved for small
-        systems, reproducibility, and debugging.
-  \item \textbf{The v2-vs-v3 winner depends on the mode.} Under \code{parfeval} the legacy
-        \emph{v2} is $\approx$10--20\% faster than the hardened \emph{v3}: its lighter
-        per-step config wins and its occasional wrong-branch stalls are absorbed across 23
-        workers. In \emph{serial} this \emph{reverses} on the large MEX cases ---
-        \code{MEX_v3} beats \code{MEX_v2} by up to \textbf{1.6$\times$} (case57mod 2737\,s vs
-        4502\,s) --- because v2's legacy settings hit wrong-branch stalls that each burn the
-        500-step cap, and in serial there is no other worker to hide that cost. \emph{So
-        v2's speed edge exists only in parallel; for serial runs on large or hard systems v3
-        is both safer and faster.} (v2's large-case serial times even differ between the MEX
-        and pure-MATLAB builds because tiny floating-point differences change which curves
-        stall --- a further argument for v3's predictability.)
-  \item \textbf{MEX vs pure-MATLAB.} Under \code{parfeval} MEX is $\approx$1.2--1.6$\times$
-        faster than the pure-MATLAB build of the same version (v3 case57mod 305\,s vs
-        421\,s). This is smaller than the $\approx 2\times$ MEX advantage seen in
-        \emph{serial}, because parfeval already spreads the work across workers so per-trace
-        speed matters less. This historical observation applies to v2/v3 only; MATLAB v4 has
-        validation results above, but no recorded timing series.
+\begin{enumerate}[leftmargin=1.6em]
+  \item Return to the same solver folder.
+  \item Use the same case, load factor, and driver mode.
+  \item Load \code{temp_result.mat}.
+  \item Run the matching runbook.
 \end{enumerate}
-The historical v2/v3 tables and the MEX v3/v4 table use different benchmark passes and trial
-counts, so they should not be combined into a direct six-release ranking. Times carry the
-usual parallel run-to-run variance ($\pm$10--15\%); read each internally consistent table as
-a ratio guide, not as an absolute cross-table ranking.
 
-% ===================== 6 =====================
-\section{Where to go next}
-Each release folder contains its own \code{HEBCPF_User_Guide.pdf} with installation,
-quick-start, full parameter reference, the \code{parfor}-vs-\code{parfeval} explanation,
-and troubleshooting specific to that build. Start there once you have picked a release from
-this guide.
+\begin{lstlisting}[style=mat]
+cd('<path>/HEBCPF_MEX_v4_20260715')       % or the pure MATLAB folder
+addpath(pwd)
+load temp_result.mat
+wait = 0;
+run('runVBook_hybrid_parfeval.m')         % queue parfeval checkpoint
+% run('runVBook_hybrid_parallel.m')       % parfor checkpoint
+\end{lstlisting}
 
-\section{License and third-party notices}
-HEBCPF is distributed under the BSD 3-Clause License; see the top-level \code{LICENSE}
-file. The suite depends on MATPOWER at runtime and calls MATPOWER functions including
-\code{runpf}, \code{makeYbus}, \code{idx_bus}, and \code{idx_brch}. Some bundled
-\code{caseXXX.m} files are copied from, derived from, or modified from MATPOWER and other
-public test-system sources. Preserve per-file attribution notices when redistributing
-modified versions, and see the top-level \code{NOTICE} file for third-party attribution
-details.
+For the MEX retained barrier driver:
 
-The optional KLU acceleration on the bordered-solve hot path links \textbf{SuiteSparse/KLU}
-(Timothy A.~Davis), distributed under the GNU LGPL-2.1-or-later license. The \code{klurf}
-MEX source and a cross-platform build script are provided in the top-level \code{klurf/}
-folder; see \code{klurf/README_KLURF.md} and the SuiteSparse license terms.
+\begin{lstlisting}[style=mat]
+load temp_result.mat
+wait = 0;
+run('runVBook_hybrid_parfeval_barrier.m')
+\end{lstlisting}
 
-\section{Citing this solver}\label{sec:cite}
-If you use results from any release, please cite the HEBC paper:
-\begin{quote}\small
-D.\ Wu and B.\ Wang, ``Holomorphic Embedding Based Continuation Method for Identifying
-Multiple Power Flow Solutions,'' \emph{IEEE Access}, vol.~7, pp.~86843--86853, 2019.
-doi:\,\doi{10.1109/ACCESS.2019.2925384}.
+For serial runs, save the workspace manually before stopping:
+
+\begin{lstlisting}[style=mat]
+save('my_checkpoint.mat', '-v7.3')
+load my_checkpoint.mat
+wait = 0;
+run('runVBook_hybrid_2023.m')
+\end{lstlisting}
+
+Internally, the resume path checks \code{VBook} and \code{Zsave}. If \code{Zsave} contains
+extra preallocated columns, it is trimmed to the book-kept solution count. The queue
+\code{parfeval} driver rebuilds pending work from \code{VBook == 0}; runtime futures and
+parallel-pool objects are not restored from the checkpoint.
+
+\section{Bundled Cases}
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.19\linewidth}p{0.27\linewidth}p{0.18\linewidth}p{0.28\linewidth}@{}}
+\toprule
+\code{case3} (6) & \code{case4gs} (6) & \code{case4BB0} (14) & \code{case4BBc} (12)\\
+\code{case5loop} (10) & \code{case5Salam} (10) & \code{case6ww} (6) & \code{case7Salam} (4)\\
+\code{case9} (8) & \code{case9Q} (8) & \code{case14mod} (30) & \code{case33bw} (16)\\
+\code{case39} (176) & \code{case30}/\code{case_ieee30} (472) & \code{case57mod} (606) & \code{case57} (1322)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Counts above are nominal-load reference counts for the completed bundled benchmarks,
+collapsing antipodal duplicates in the solver's canonical output convention.
+
+\section{Validation Summary}
+
+During preparation of this release, the v4 resume behavior was checked by comparing
+uninterrupted runs with forced checkpoint/resume runs:
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{0.17\linewidth}p{0.24\linewidth}p{0.16\linewidth}p{0.27\linewidth}@{}}
+\toprule
+\textbf{Folder} & \textbf{Driver} & \textbf{Cases} & \textbf{Result}\\
+\midrule
+MEX v4 & \code{parallel}, \code{parfeval}, barrier \code{parfeval} &
+\code{case14mod}, \code{case39} & Matching solution counts; set errors below \code{4e-7}.\\
+Pure MATLAB v4 & \code{parallel}, \code{parfeval} &
+\code{case14mod} & Matching solution counts; set errors below \code{4e-7}.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The user guides were checked against the actual runbooks for checkpoint name,
+resume path, driver names, and \code{slope_max = 4e5}.
+
+\section{Release Contents}
+
+\begin{center}\small
+\begin{longtable}{@{}p{0.30\textwidth}p{0.60\textwidth}@{}}
+\toprule
+\textbf{Path} & \textbf{Purpose}\\
+\midrule\endhead
+\code{README.md} & GitHub front page and quick start.\\
+\code{CHANGELOG.md} & Release history.\\
+\code{RELEASE_NOTES_20260715.md} & GitHub release notes for this package.\\
+\code{RELEASE_CHECKLIST_20260715.md} & Final GitHub payload and local-verification checklist.\\
+\code{run_benchmark_up_to_57bus_20260715.m} & Reproducible queue-\code{parfeval} benchmark driver.\\
+\code{benchmark_results_20260715/20260715_194046/} & Committed benchmark report and combined CSV.\\
+\code{CITATION.cff} & Software citation metadata.\\
+\code{LICENSE}, \code{NOTICE} & License and third-party notices.\\
+\code{HEBCPF_Suite_Overview.tex/pdf} & This overview.\\
+\code{HEBCPF_MEX_v4_20260715/} & Compiled Windows x64 v4 solver.\\
+\code{HEBCPF_matlab_v4_20260715/} & Pure MATLAB v4 solver.\\
+\code{klurf/} & KLU refactor MEX source, build helper, and notes.\\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\section{Citation}
+
+If you use results produced by this solver, please cite:
+
+\begin{quote}
+D. Wu and B. Wang, ``Holomorphic Embedding Based Continuation Method for Identifying
+Multiple Power Flow Solutions,'' \emph{IEEE Access}, vol. 7, pp. 86843--86853, 2019.
+doi: \href{https://doi.org/10.1109/ACCESS.2019.2925384}{10.1109/ACCESS.2019.2925384}.
 \end{quote}
-For citing the software package itself, see the top-level \code{CITATION.cff} file.
-The foundational and related works (elliptical branch tracing, Wu's 2017 UW--Madison thesis,
-the ACOPF extension, the voltage-stability-margin application, and the IEEE Dataport
-solution-set collection) are listed in each release's user guide.
+
+For citing the software package, use the included \code{CITATION.cff}.
 
 \vfill
 \begin{center}\small\itshape
-HEBCPF Solver Suite --- Overview \& Selection Guide. Redistribute alongside the releases.
+HEBCPF Solver Suite 2026.07.15. This document accompanies the solver release and may be
+redistributed with it.
 \end{center}
 
 \end{document}
