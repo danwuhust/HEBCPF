@@ -49,6 +49,7 @@ initbypass =0; % if it is 0, starting from the very beginning; if it is 1, start
 
 %% if VBook exists, check if VBook matches Zsave, and start from the existing solution
 if exist('VBook','var')
+    VBook = uint32(VBook);   % native class (old double checkpoints converted)
     numberofsolutions = size(VBook,1)
     if size(Zsave,2) > numberofsolutions 
         Zsave = Zsave(:, 1:numberofsolutions); 
@@ -87,6 +88,8 @@ else % initialize, starting from the first solution and the first trace
 
     numberofsolutions = size(Z,2);
 
+    % uint32 from birth: trace ids are small integers; halves VBook RAM
+    VBook = zeros(numberofsolutions, 1, 'uint32');
     VBook(1:numberofsolutions,1) = count;  %bookkeeping.
 
     Zsave = [Zsave Z];
@@ -226,7 +229,15 @@ while numberofsolutions+1>solutionnumber
     %% save temporary data for a certain period of time
     if totalTime/30000>totalTime_ind
         totalTime_ind = totalTime_ind+1;
-        save('temp_result.mat', '-v7.3', '-regexp', '^(?!(futs|p)$).');
+        % Save only the resume state. Trim unused solution capacity and keep
+        % the exact preprocessed problem and ellipse state so main.m need not
+        % be rerun. The numerical arrays benefit from uncompressed v7.3 I/O.
+        Zsave = Zsave(:, 1:numberofsolutions);
+        save('temp_result.mat', 'Zsave','VBook','mpc','Ybus','bus_n', ...
+             'numofvar','numofcons','Mp','Mq','Ma','ba','I','degree', ...
+             'MS','M0','T','Tinv','bb','km0','fac','solu','solu0','wait', ...
+             'solutionnumber','count','numberofsolutions', ...
+             'totalTime','totalTime_ind','NY','NYh', '-v7.3', '-nocompression');
         fprintf('[checkpoint] %d solutions, %d traces\n\n\n', numberofsolutions, count);
     end
 end

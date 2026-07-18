@@ -49,6 +49,7 @@ initbypass =0; % if it is 0, starting from the very beginning; if it is 1, start
 
 %% if VBook exists, check if VBook matches Zsave, and start from the existing solution
 if exist('VBook','var')
+    VBook = uint32(VBook);   % native class (old double checkpoints converted)
     numberofsolutions = size(VBook,1)
     if size(Zsave,2) > numberofsolutions 
         Zsave = Zsave(:, 1:numberofsolutions); 
@@ -84,7 +85,9 @@ else % initialize, starting from the first solution and the first trace
     totalTime = Time;
 
     numberofsolutions = size(Z,2);
-
+    
+    % uint32 from birth: trace ids are small integers; halves VBook RAM
+    VBook = zeros(numberofsolutions, 1, 'uint32');
     VBook(1:numberofsolutions,1) = count;  %bookkeeping.
 
     Zsave = [Zsave Z];
@@ -233,10 +236,19 @@ while numberofsolutions+1>solutionnumber
     %% save temporary data for a certain period of time
     if totalTime/30000>totalTime_ind
         totalTime_ind = totalTime_ind+1;
-        % Optional pool.Constants and the accessor are runtime-only; the
-        % resume path reconstructs them from the saved system matrices.
-        save('temp_result.mat', '-v7.3', '-regexp', ...
-            '^(?!(MS_c|M0_c|Tinv_c|Ma_c|Mp_c|Mq_c|Ybus_c|getv|useConst)$).');
+        % Save ONLY what resuming the search needs. Zsave is truncated to the
+        % confirmed solutions (drops headroom padding); VBook ids are small
+        % integers, so uint32 is lossless and half the size. The problem and
+        % ellipse state ride along so resume uses the exact preprocessed
+        % system without rerunning main.m. -nocompression: solution data barely compresses
+        % and MATLAB's gzip is single-threaded (measured 32x slower).
+        Zsave = Zsave(:, 1:numberofsolutions);   % drop headroom padding (regrows on demand)
+        save('temp_result.mat', 'Zsave','VBook','mpc','Ybus','bus_n', ...
+             'numofvar','numofcons','Mp','Mq','Ma','ba','I','degree', ...
+             'MS','M0','T','Tinv','bb','km0','fac','solu','solu0','wait', ...
+             'solutionnumber','count','numberofsolutions', ...
+             'totalTime','totalTime_ind','NY','NYh', '-v7.3', '-nocompression');
+%         save case118_temp.mat
     end
 end
 if size(Zsave,2) > numberofsolutions; Zsave = Zsave(:, 1:numberofsolutions); end

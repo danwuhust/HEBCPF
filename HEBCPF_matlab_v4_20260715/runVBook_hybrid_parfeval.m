@@ -26,6 +26,7 @@ count = 1;
 %% Resume from a compatible checkpoint; otherwise seed the solution set.
 initbypass = 0;
 if exist('VBook','var')
+    VBook = uint32(VBook);   % native class (old double checkpoints converted)
     numberofsolutions = size(VBook,1) %#ok<NOPTS>
     if size(Zsave,2) > numberofsolutions
         Zsave = Zsave(:,1:numberofsolutions);
@@ -55,6 +56,8 @@ else
     NY=NY+size(Y,2);
     totalTime = Time;
     numberofsolutions = size(Z,2);
+    % uint32 from birth: trace ids are small integers; halves VBook RAM
+    VBook = zeros(numberofsolutions, 1, 'uint32');
     VBook(1:numberofsolutions,1) = count;
     Zsave = [Zsave Z];
     fprintf('No. Solu: %d, Solu No.: %d, No. Eqt: %d, Eqt No.: %d, Time: %g \n', ...
@@ -168,9 +171,18 @@ while true
     VBook(match,e_done) = count;
 
     %% Save only serializable solver state; futures and the pool are rebuilt.
-    if totalTime/30000 > totalTime_ind
+    if totalTime/200000 > totalTime_ind
         totalTime_ind = totalTime_ind + 1;
-        save('temp_result.mat', '-v7.3', '-regexp', '^(?!(futs|p)$).');
+        % Save only the resume state. Trim unused solution capacity and keep
+        % the exact preprocessed problem and ellipse state so main.m need not
+        % be rerun. The numerical arrays benefit from uncompressed v7.3 I/O.
+        Zsave = Zsave(:, 1:numberofsolutions);
+        Zcap = size(Zsave,2);
+        save('temp_result.mat', 'Zsave','VBook','mpc','Ybus','bus_n', ...
+             'numofvar','numofcons','Mp','Mq','Ma','ba','I','degree', ...
+             'MS','M0','T','Tinv','bb','km0','fac','solu','solu0','wait', ...
+             'solutionnumber','count','numberofsolutions', ...
+             'totalTime','totalTime_ind','NY','NYh', '-v7.3', '-nocompression');
         fprintf('[checkpoint] %d solutions, %d traces\n\n\n', numberofsolutions, count);
     end
 end
