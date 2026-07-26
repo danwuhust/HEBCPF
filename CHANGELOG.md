@@ -2,6 +2,38 @@
 
 All notable changes to HEBCPF are documented here.
 
+## v5.0.0 - 2026.07.26
+
+V5.5 was an unreleased development package. V5 is documented directly against
+the public 2026.07.15 v4 baseline.
+
+- Packaged the live solvers as `HEBCPF_MEX_v5` and `HEBCPF_matlab_v5`.
+- Rebuilt `klurf.mexw64` from pinned official SuiteSparse v7.12.2 and added a
+  matching corresponding-source, license, build-metadata, and checksum package.
+- Added three canonical queue schedulers: v4-compatible `scan`, learned
+  productivity `bandit` (default), and bounded projected-distance `novelty`.
+  The internal-v5 name `diverse` remains a deprecated alias for `bandit`.
+- Replaced auxiliary per-equation pending lists with coverage cursors, reducing
+  scheduler bookkeeping from `O(ns*neq)` duplicated lists to `O(neq)` state;
+  the required `VBook` coverage matrix remains `O(ns*neq)`.
+- Added per-trace anytime instrumentation, scheduler-overhead counters, and a
+  resumable three-repeat benchmark of all bundled cases through case57.
+- Synchronized scheduler behavior, configuration, wrappers, and batch defaults
+  across the MEX and pure-MATLAB packages.
+- Centralized the initial/hard solution-encounter caps at 2,000/5,000 through
+  `solver_params.m` in every parallel driver.
+- Extended checkpoints with policy, learned gains, and trace histories, and
+  added a harness that exercises cyclic cross-policy transitions in both packages.
+- Added explicit provenance metadata, guarded report publication, and a
+  portable raw benchmark archive with a SHA-256 checksum for official dataset
+  `20260724_3x23`.
+- Reworked the suite overview and both user guides to compare V5 directly
+  with v4 and to describe scheduler principles, complexity, and measured
+  numerical behavior.
+- Adopted official dataset `20260724_3x23` as the V5 scheduler evidence because
+  the benchmarked V5.5 development tree and V5 solver source are identical;
+  metadata records both the benchmark-time and rebuilt release KLU hashes.
+
 ## 2026.07.15
 
 This benchmarked maintenance release packages the v4 solver line:

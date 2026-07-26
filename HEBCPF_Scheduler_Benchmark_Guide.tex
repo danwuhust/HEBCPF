@@ -1,0 +1,138 @@
+% Shared V5 benchmark chapter, included by both solver user guides.
+\section{Scheduler benchmark and direct v4 baseline}\label{sec:benchmark}
+
+\subsection{Experimental design and metrics}
+\code{run_scheduler_benchmark_v5.m} uses MEX so the comparison isolates
+scheduler order from kernel implementation. It tests all 20 bundled cases
+through case57 under three policies and three repeats: 180 measured runs.
+A 23-worker pool remains open, each policy receives an untimed warm-up, policy
+order rotates by repeat, and raw state is saved after each run for resumability.
+Every numerical and timing value published for v5 comes solely from official
+dataset \code{20260724_3x23}, produced on the designated main job machine under
+MATLAB R2022a on Windows x64. Results from other machines are not merged into
+the tables, plots, or release claims. Machine-readable provenance and scheduler
+settings are recorded in \code{../BENCHMARK_METADATA_v5.json}; the portable raw
+evidence is distributed as a separately attached GitHub Release archive.
+The designated-machine run used the source-equivalent V5.5 development tree;
+V5 differs only by the reproducibly rebuilt KLU binary. The metadata records
+both KLU hashes, and the authors adopt the dataset as the official V5 result.
+
+Recorded fields include final solutions, total traces, trace indices to 50\%,
+90\%, and 99\%, wall time to 90\%, exhaustive wall time, worker trace-time
+statistics, scheduler selection time, cursor checks, novelty draws, maximum
+residual, and solution-set agreement. Trace-to-90\% measures anytime discovery;
+exhaustive wall time includes the coverage tail needed to establish that no
+eligible pair remains.
+
+\subsection{Overall measured results}
+\begin{center}\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Policy & Wall total (s) & Summed t90 & Selection (s) & Selection share & t90 wins\\
+\midrule
+\code{scan} & 606.95 & 35,975 & 3.57 & 0.59\% & 6\\
+\code{bandit} & 607.18 & 16,611 & 0.98 & 0.16\% & 7\\
+\code{novelty} & 606.70 & 11,975 & 34.16 & 5.63\% & 18\\
+\bottomrule
+\end{tabular}
+\end{center}
+Exhaustive totals differed by less than 0.05\% from \code{scan}; the main effect
+was \emph{when} solutions appeared. Relative to scan, bandit reduced aggregate
+trace-to-90\% by 53.8\% and novelty by 66.7\%. Bandit is default because it
+retained most of the anytime benefit with far lower selection overhead. For
+case57, mean t90 was 19,481, 6,996, and 4,594 for scan, bandit, and novelty,
+while exhaustive wall time remained approximately 333--337 seconds.
+
+\IfFileExists{../scheduler_benchmark_v5_wall.png}{
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.96\textwidth]{../scheduler_benchmark_v5_wall.png}
+\caption{Three-repeat mean exhaustive MEX wall time; error bars show one sample
+standard deviation.}
+\end{figure}}{}
+\IfFileExists{../scheduler_benchmark_v5_t90.png}{
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.96\textwidth]{../scheduler_benchmark_v5_t90.png}
+\caption{Mean completed traces required to reach 90\% of the final solution count.}
+\end{figure}}{}
+\IfFileExists{../scheduler_benchmark_v5_anytime.png}{
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.96\textwidth]{../scheduler_benchmark_v5_anytime.png}
+\caption{Anytime discovery for case57mod and case57; bands span the repeats.}
+\end{figure}}{}
+\IfFileExists{../scheduler_benchmark_v5_anytime_representative.png}{
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.96\textwidth]{../scheduler_benchmark_v5_anytime_representative.png}
+\caption{Anytime discovery for case14mod, case33bw, case39, and case30. Lines
+are three-repeat means and bands span the repeat range. The figure is derived
+from the stored per-trace histories; it does not require new solver runs.}
+\end{figure}}{}
+\IfFileExists{../scheduler_benchmark_v5_anytime_suite.png}{
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.96\textwidth]{../scheduler_benchmark_v5_anytime_suite.png}
+\caption{Normalized anytime discovery across all 20 benchmark cases. Cases and
+repeats receive equal weight, with interquartile bands. Trace normalization
+(left) isolates scheduling progress; elapsed-time normalization (right) also
+reflects trace-duration and scheduler-overhead effects.}
+\end{figure}}{}
+
+The representative panels confirm that adaptive dispatch can improve early
+coverage outside the two largest cases, but the gain is case-dependent. The
+suite-level figure is a macro average: each case contributes equally, rather
+than weighting results by solution count or allowing case57 to dominate.
+
+\subsection{Large-case reference connectivity}
+The benchmark retained final solution matrices and cumulative trace histories
+for case30 and case57, but not the policy-specific \code{VBook} arrays required
+to reconstruct exact scan/bandit/novelty edges. The diagrams below are therefore
+single reference traversal graphs reconstructed offline from the complete
+released-v4 MEX snapshots; no solver was rerun. They describe those recorded
+continuation connections, not a three-policy v5 connectivity comparison.
+
+The underlying v4 solution matrices were compared symmetrically and
+antipode-aware with the saved v5 scan references. Distances were
+$9.45\times10^{-12}$ for case30 and $2.00\times10^{-10}$ for case57, both far
+below the $4\times10^{-7}$ deduplication tolerance.
+
+\IfFileExists{../connectivity_case30_v4_reference.png}{
+\begin{figure}[p]\centering
+\includegraphics[width=0.96\textwidth]{../connectivity_case30_v4_reference.png}
+\caption{case30 released-v4 reference connectivity: 472 solutions, 2,943
+unique edges, and one component. Color is reference discovery order, node size
+is degree, and line width reflects the number of shared traces.}
+\end{figure}}{}
+\IfFileExists{../connectivity_case57_v4_reference.png}{
+\begin{figure}[p]\centering
+\includegraphics[width=0.96\textwidth]{../connectivity_case57_v4_reference.png}
+\caption{case57 released-v4 reference connectivity: 1,322 solutions, 8,301
+unique edges, and one component. Color is reference discovery order, node size
+is degree, and line width reflects the number of shared traces.}
+\end{figure}}{}
+
+\subsection{Solution-set validation and checkpoint test harness}
+All 180 timing runs returned expected counts. Symmetric nearest-column
+$L_\infty$ comparison checked bandit and novelty against scan for every case:
+40/40 passed. Worst set distance was $2.6591\times10^{-9}$ versus the
+$4\times10^{-7}$ tolerance; largest validation residual was
+$5.6091\times10^{-8}$. The release also includes
+\code{test_checkpoint_policy_compatibility_v5.m} for users to exercise
+cross-policy resume on their own platform. No checkpoint result produced on a
+non-designated machine is included as published numerical evidence.
+
+\subsection{Direct comparison with released v4}
+The retained 2026.07.15 v4 pass used the same 20 cases, MATLAB R2022a,
+Windows x64, and 23 workers:
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Implementation & Aggregate wall (s) & Trace wall (s) & Solutions\\
+\midrule
+MEX v4 & 718.656 & 716.062 & 3256\\
+Pure MATLAB v4 & 1272.966 & 1271.222 & 3256\\
+V5 MEX \code{scan}, three-repeat mean & 606.947 & -- & 3256\\
+\bottomrule
+\end{tabular}
+\end{center}
+The v5 scan result is descriptively 15.5\% below historical MEX v4, but v4
+is one retained pass while v5 is a current three-repeat experiment. This is
+release context, not a controlled paired speedup claim. Full per-case results
+are in \code{../SCHEDULER_BENCHMARK_v5.md} and the published CSV files.

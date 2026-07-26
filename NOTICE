@@ -67,11 +67,10 @@ the pure MATLAB releases.
 SuiteSparse/KLU and klurf
 -------------------------
 
-Package 2026.07.14 includes an optional KLU-accelerated bordered Newton solve.
-The MEX release folders include `klurf.mexw64`. MATLAB v2/v3 can use a compatible
-`klurf` binary; MATLAB v4 deliberately uses MATLAB built-ins only. The top-level `klurf/` folder
+The MEX releases include an optional KLU-accelerated bordered Newton solve and
+the Windows x64 `klurf.mexw64` used by the solver. The top-level `klurf/` folder
 contains the HEBCPF-specific MEX wrapper source (`klurf_mex.c`), build helper
-(`klurf_make.m`), and build notes.
+(`klurf_make.m`), and build notes. Pure-MATLAB releases do not call `klurf`.
 
 `klurf` links against SuiteSparse/KLU and related SuiteSparse components,
 including AMD, COLAMD, BTF, and SuiteSparse_config. SuiteSparse is authored
@@ -83,6 +82,13 @@ KLU and related SuiteSparse components are distributed under their own license
 terms, including GNU LGPL-2.1-or-later terms for KLU. Users who rebuild,
 modify, or redistribute the KLU-linked MEX must review the authoritative
 SuiteSparse license texts and meet the applicable redistribution requirements.
+
+For reproducible redistribution, the V5 GitHub Release assets include the
+Windows x64 MEX rebuilt from official SuiteSparse v7.12.2, Git commit
+42151688813c45846a597edcb601435a0e38f3dd, together with a matching source
+archive and SHA-256 checksums. The source archive retains the exact required
+KLU, BTF, AMD, COLAMD, and SuiteSparse_config source and license material. The
+archived binary hash matches the copies in `klurf/` and `HEBCPF_MEX_v5/`.
 
 Citation
 --------

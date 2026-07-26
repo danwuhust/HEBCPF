@@ -1,0 +1,123 @@
+% Shared v5 scheduler chapter, included by both v4-layout user guides.
+\section{The three \code{parfeval} schedulers}\label{sec:schedulers}
+
+\subsection{Execution framework versus scheduler}
+The \emph{framework} determines how curve traces execute: serial, synchronous
+\code{parfor}, or asynchronous \code{parfeval}. The \emph{scheduler} determines
+which eligible trace the \code{parfeval} queue launches next. Therefore
+\code{HEBCPOLICY} affects only \code{runVBook_hybrid_parfeval.m}; it does not
+alter serial or \code{parfor} mathematics. All policies share the branch tracer,
+corrector, Pad\'e calculation, deduplication, residual tests, and completion rule.
+
+A \emph{trace} follows one continuation curve from one known solution for one
+equation. It can return zero, one, or several previously unknown solutions.
+Thus trace count measures completed work, not solution count. Trace-to-90\% is
+the completion index at which accumulated discoveries first reach 90\% of that
+run's final solution total.
+
+\subsection{Shared queue state and completeness}
+The queue operates on pairs $(s,e)$ of known solution and equation.
+\code{VBook(s,e)==0} marks an uncovered pair. Only a non-busy equation can be
+dispatched, so two workers never race to stamp the same equation column.
+Each equation owns a monotonic solution-index cursor that advances past covered
+rows and later reaches newly appended solutions. This replaces v4's duplicated
+pending lists: auxiliary scheduler state is $O(n_{\rm eq})$, while the necessary
+coverage matrix remains $O(n_s n_{\rm eq})$.
+
+\subsection{\code{scan}: rotating fairness and the v4 baseline}
+\code{scan} starts at a rotating equation pointer and takes the first eligible
+equation and its cursor-selected solution. It performs no ranking or geometric
+calculation. Individual cursor checks are constant work, and covered entries are
+amortized over cursor advancement. Choose \code{scan} for the closest direct v4
+queue comparison, debugging, or minimum dispatch overhead.
+
+\subsection{\code{bandit}: learned productivity (default)}
+Every equation carries a discounted discovery gain
+\[
+g_e\leftarrow0.7g_e+0.3d_e,\qquad g_e^{(0)}=5,
+\]
+where $d_e$ is the number of new solutions returned by its latest completed
+trace. The optimistic initial value promotes exploration. Each dispatch sorts
+equations by decreasing gain and takes the first eligible one, costing
+$O(n_{\rm eq}\log n_{\rm eq})$ with $O(n_{\rm eq})$ gain storage.
+After $2n_{\rm eq}$ consecutive no-discovery traces, the run switches one-way
+to \code{scan} for the mechanical coverage tail. A discovery before that
+threshold resets the counter.
+
+\subsection{\code{novelty}: gain ranking plus geometric separation}
+\code{novelty} uses the bandit equation rank, then chooses a separated start on
+that equation. It samples at most 96 eligible candidates and 96 covered
+references, maps them through a fixed eight-dimensional random projection,
+includes both reference signs, and chooses the candidate with greatest
+nearest-reference squared distance. Sampling is capped at 400 draws per
+dispatch. With caps $k_c$, $k_r$, and projection dimension $k_p$, distance work
+is bounded by $O(k_c k_r k_p)$. Dedicated seeded streams isolate this calculation
+from unrelated RNG calls, but asynchronous completion remains nondeterministic.
+
+\subsection{Selecting and choosing a policy}
+\begin{lstlisting}[style=mat]
+global HEBCPOLICY
+HEBCPOLICY = 'scan';       % rotating v4-oriented baseline
+HEBCPOLICY = 'bandit';     % default: discounted equation gain
+HEBCPOLICY = 'novelty';    % bandit plus projected separation
+[result,solutions] = run_merged_case('case57mod','parfeval',false);
+result.scheduler
+result.trace_metrics.trace_to_90pct
+\end{lstlisting}
+Unset or empty selects \code{bandit}. The legacy internal name \code{diverse} is
+a deprecated alias for \code{bandit}; unknown names raise an error.
+\code{trace_policy_config.m} normalizes the value through every entry point, so
+\code{main.m} cannot silently overwrite an explicit choice.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.16\textwidth}p{0.25\textwidth}p{0.27\textwidth}p{0.22\textwidth}@{}}
+\toprule
+Policy & Objective & Cost and behavior & Best use\\
+\midrule
+\code{scan} & Fair coverage & Lowest selection cost & v4 comparison/debugging\\
+\code{bandit} & Productive equations first & Gain sort; cheap tail hand-off &
+general use; default\\
+\code{novelty} & Separated starts first & Bounded projection-distance work &
+early/anytime discovery\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Scheduler choice changes traversal order, not the power-flow model. Correctness
+is checked by final count, residual, and order-independent set distance. Wall
+time and trace-to-target are measured quantities, not guarantees. A few extra
+traces can complete when already-running futures finish after another worker
+establishes coverage; this benign tail redundancy explains occasional
+one-trace differences between policies.
+
+\subsection{Solution-connectivity diagrams}
+Within each case all panels use identical graph geometry. Nodes are solutions,
+color is discovery order, and edges join solutions covered by a shared trace.
+Panel differences therefore show traversal history, not different accepted
+final sets; the operating-point seed is black.
+
+\IfFileExists{../connectivity_case14mod_scan.png}{
+\begin{figure}[htbp]\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.30\textwidth]{../connectivity_case14mod_scan.png}&
+\includegraphics[width=0.30\textwidth]{../connectivity_case14mod_bandit.png}&
+\includegraphics[width=0.30\textwidth]{../connectivity_case14mod_novelty.png}\\
+\code{scan}&\code{bandit}&\code{novelty}
+\end{tabular}
+\caption{case14mod connectivity for the common 30-solution set.}
+\end{figure}}{}
+
+\IfFileExists{../connectivity_case39_scan.png}{
+\begin{figure}[htbp]\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.30\textwidth]{../connectivity_case39_scan.png}&
+\includegraphics[width=0.30\textwidth]{../connectivity_case39_bandit.png}&
+\includegraphics[width=0.30\textwidth]{../connectivity_case39_novelty.png}\\
+\code{scan}&\code{bandit}&\code{novelty}
+\end{tabular}
+\caption{case39 connectivity for the validated common 176-solution set.}
+\end{figure}}{}
+
+A complete single-session \code{solution_connectivity.m} graph should contain
+one connected component. Multiple components can indicate merged or inconsistent
+bookkeeping rather than superior scheduler exploration.

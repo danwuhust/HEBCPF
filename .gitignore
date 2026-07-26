@@ -11,13 +11,19 @@ results_summary.csv
 results_par_summary.csv
 results_parfeval_summary.csv
 
-# Generated benchmark artifacts. Keep only the completed release report and
-# combined CSV; logs, snapshots, MATLAB records, and incomplete attempts stay local.
-benchmark_results_20260715/*
-!benchmark_results_20260715/20260715_194046/
-benchmark_results_20260715/20260715_194046/*
-!benchmark_results_20260715/20260715_194046/BENCHMARK_SUMMARY.md
-!benchmark_results_20260715/20260715_194046/benchmark_summary_all.csv
+# Raw benchmark work directories stay local. Curated reports, summary CSV files,
+# plots, and metadata are tracked separately; portable raw ZIP files are release assets.
+benchmark_results_v5/
+scheduler_benchmark_v5/
+# Optional historical v4 connectivity inputs are local-only and can be large.
+benchmark_results_20260715/
+tmp/
+temp_result_policy_test.mat
+
+# Release archives are attached to the GitHub Release, not committed to Git.
+release_assets/*.zip
+release_assets/*.sha256
+release_assets/*.mexw64
 
 # LaTeX intermediates
 *.aux

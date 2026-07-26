@@ -1,0 +1,12 @@
+\begin{center}\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Policy & Wall (s) & $\sum t_{90}$ & Total traces & Selection (\%) & Set distance\\
+\midrule
+\code{scan} & 606.947 $\pm$ 15.320 & 35975.3 & 112767.7 & 0.59 & 0\\
+\code{bandit} & 607.184 $\pm$ 24.875 & 16611.3 & 112767.3 & 0.16 & 2.5e-10\\
+\code{novelty} & 606.698 $\pm$ 7.352 & 11975.3 & 112767.7 & 5.63 & 2.7e-09\\
+\bottomrule
+\end{tabular}
+\end{center}
+Across 20 cases, bandit and novelty reduced summed traces to 90\% by 53.8\% and 66.7\% versus scan, while aggregate exhaustive wall time differed by less than 0.1\%.

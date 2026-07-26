@@ -40,21 +40,27 @@ Direct API: `X = klurf(A, B)` solves `A*X = B` (A real sparse n×n, B real dense
 
 ## Prebuilt binary
 
-`klurf.mexw64` (Windows x64) is included and already copied into the `HEBCPF_MEX_*`
-folders. MATLAB v2/v3 can also use a compatible binary placed in their release folder.
-MATLAB v4 deliberately keeps its correctors pure MATLAB and does not call `klurf`.
+`klurf.mexw64` (Windows x64) is included here and in `HEBCPF_MEX_v5/`.
+`HEBCPF_matlab_v5/` deliberately uses MATLAB built-ins and does not call `klurf`.
+
+The V5 binary was rebuilt from official SuiteSparse `v7.12.2`, commit
+`42151688813c45846a597edcb601435a0e38f3dd`. The matching release asset contains
+the exact component source, license texts, build metadata, smoke check, and
+binary. Its hash matches the copies in `klurf/` and `HEBCPF_MEX_v5/`. See
+`release_assets/README.md` and the archived `BUILD_INFO.md`.
 
 ## Rebuilding (Linux / macOS, or from source)
 
 `klurf` links against SuiteSparse/KLU (open source, LGPL-2.1+; Tim Davis). To rebuild:
 
-1. Get SuiteSparse (https://github.com/DrTimothyAldenDavis/SuiteSparse).
+1. Get the pinned official SuiteSparse `v7.12.2` source, or use the matching
+   V5 source release asset.
 2. Copy `klurf_mex.c` and `klurf_make.m` into `SuiteSparse/KLU/MATLAB/`.
 3. From that directory in MATLAB: `klurf_make`  (real-valued, no CHOLMOD; uses AMD/COLAMD/BTF).
 4. Copy the resulting `klurf.<mexext>` next to the solver (or into the folder you run from).
 
 `klurf_make.m` compiles the needed SuiteSparse sources directly, so no prior SuiteSparse
-build/library is required — only a working `mex` compiler.
+build/library is required - only a working `mex` compiler.
 
 ## Note on correctness
 

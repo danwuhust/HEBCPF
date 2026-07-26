@@ -3,6 +3,8 @@
 *.tex text eol=lf
 *.cff text eol=lf
 *.csv text eol=lf
+*.json text eol=lf
+*.sha256 text eol=lf
 *.mexw64 binary
 *.pdf binary
 *.mat binary

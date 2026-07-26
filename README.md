@@ -1,157 +1,182 @@
-# HEBCPF Solver Suite 2026.07.15
+# HEBCPF Solver Suite V5
 
-HEBCPF is a MATLAB solver suite for finding all real-valued solutions of AC
-power-flow equations. It combines an ellipsoidal formulation, holomorphic
-embedding, Pade approximation, and numerical continuation.
+HEBCPF is a MATLAB solver suite for enumerating real-valued solutions of AC
+power-flow equations by holomorphic-embedding-based continuation (HEBC).
 
-This release contains the v4 solver line in two forms:
+This release contains two equivalent implementations:
 
-| Folder | Solver | Best Use |
+| Folder | Implementation | Best use |
 | --- | --- | --- |
-| `HEBCPF_MEX_v4_20260715` | Windows x64 MEX-accelerated v4 | Fastest release on supported Windows MATLAB installations |
-| `HEBCPF_matlab_v4_20260715` | Pure MATLAB v4 | Portable, inspectable, no compiler or MEX binaries required |
+| `HEBCPF_MEX_v5` | Windows x64 MEX-accelerated V5 | Fastest supported Windows configuration |
+| `HEBCPF_matlab_v5` | Pure MATLAB V5 | Portable, inspectable, and compiler-free |
 
-Both solvers use the same v4 numerical settings, including consensus Pade-pole
-selection, deterministic keyed deduplication, `slope_max = 4e5`, and the v4
-asynchronous `parfeval` work queue. The MEX release also includes a retained
-barrier-style `parfeval` driver for A/B comparison.
+## Direct comparison with v4
 
-Release 2026.07.15 is the benchmarked maintenance release of the v4 line. It
-retains the 2026.07.14 formulation and numerical settings, while adding tested
-checkpoint/resume behavior for long parallel searches. Older v2/v3 and v4
-packages remain available through their GitHub tags for historical
-reproduction; add only one solver folder to the MATLAB path at a time.
+V5.5 was an unreleased development package and is not a public release
+baseline. V5 is therefore compared directly with the 2026.07.15 v4 package:
+
+| Area | v4 (2026.07.15) | V5 |
+| --- | --- | --- |
+| Queue scheduling | `scan` rotating fairness | `scan`, `bandit` (default), and `novelty` |
+| Pending-pair state | Per-equation pending lists | Per-equation cursors; auxiliary scheduler state is `O(neq)` |
+| Anytime instrumentation | Final counts and timing | Per-trace discovery, completion time, equation, and worker time |
+| Solution encounter cap | Older fixed/default settings | Central 2,000 initial cap and 5,000 hard cap via `solver_params` |
+| Checkpoint policy state | Solver state | Solver state, trace history, active policy, and learned gains |
+| Benchmarking | MEX-versus-pure v4 benchmark | Three-scheduler, three-repeat V5 MEX benchmark through case57 |
+
+The mathematical formulation, MATPOWER case format, convergence tolerances,
+deduplication tolerance, and final completeness criterion remain compatible
+with v4. Scheduler choice changes dispatch order and the anytime discovery
+profile; it does not intentionally change the completed solution set.
 
 ## Requirements
 
-- MATLAB R2022a or later. This release was prepared and checked with MATLAB
-  R2022a.
-- MATPOWER 7.1 or a compatible MATPOWER release on the MATLAB path.
-- Parallel Computing Toolbox for `run_batch_par.m`, `run_batch_parfeval.m`,
-  `runVBook_hybrid_parallel.m`, and `runVBook_hybrid_parfeval.m`.
-- MATLAB Coder and a supported C compiler only if rebuilding MEX binaries.
+- MATLAB R2022a or later. V5 was prepared with R2022a.
+- MATPOWER 7.1 or a compatible release on the MATLAB path.
+- Parallel Computing Toolbox for the `parfor` and `parfeval` drivers.
+- MATLAB Coder and a supported compiler only when rebuilding MEX binaries.
 
 HEBCPF calls MATPOWER's installed `runpf`, `makeYbus`, `idx_bus`, and
-`idx_brch`. It does not redistribute MATPOWER itself.
+`idx_brch`; MATPOWER is not redistributed in this package.
 
-## Benchmark Results
+## Quick start
 
-The released queue-`parfeval` benchmark covers all 20 bundled cases through
-57 buses at nominal load, using MATLAB R2022a on Windows x64 with 23 local
-workers. Parallel-pool startup was excluded from per-case timing.
-
-| Solver | Cases | Total wall time | Trace wall time | Total solutions |
-| --- | ---: | ---: | ---: | ---: |
-| MEX v4 | 20 | 718.656 s | 716.062 s | 3256 |
-| Pure MATLAB v4 | 20 | 1272.966 s | 1271.222 s | 3256 |
-
-MEX v4 used 1.77x less aggregate wall time and was faster on 14 cases. The
-pure MATLAB package was faster on six small cases, where overhead dominates.
-Every case had matching solution counts; an order-independent solution-set
-check had maximum nearest-solution distance `3.154e-7`, below the shared
-deduplication tolerance of `4e-7`. These figures compare the two 2026.07.15
-v4 packages only, not earlier releases or other hardware/platforms.
-
-Run `run_benchmark_up_to_57bus_20260715` to reproduce the experiment. The
-committed report and CSV are in
-`benchmark_results_20260715/20260715_194046/`; full per-case results appear
-in `HEBCPF_Suite_Overview.pdf`.
-
-## Quick Start
-
-Use exactly one solver folder on the MATLAB path at a time because the MEX and
-pure MATLAB folders contain many functions and cases with the same names.
+Add only one implementation folder to the MATLAB path because both folders
+contain functions and cases with the same names.
 
 ```matlab
-cd('<path_to_HEBCPF>/HEBCPF_MEX_v4_20260715')       % or HEBCPF_matlab_v4_20260715
+cd('<path_to_HEBCPF>/HEBCPF_MEX_v5')  % or HEBCPF_matlab_v5
 addpath(pwd)
 
-% one case, recommended large-case mode
-[result, solutions] = run_merged_case('case14mod', 'parfeval');
+global HEBCPOLICY
+HEBCPOLICY = 'bandit';                  % default; also scan or novelty
+[result, solutions] = run_merged_case('case14mod','parfeval');
 result
 ```
 
-Available modes are:
+The legacy v5 name `diverse` is accepted as a deprecated alias for `bandit`.
+See `POLICY_README.md` for the algorithms, complexity, checkpoint semantics,
+and selection guidance.
 
-- `serial`: no Parallel Computing Toolbox; easiest to debug.
+Available execution modes are:
+
+- `serial`: no Parallel Computing Toolbox; simplest to debug.
 - `parfor`: synchronous parallel batch per starting solution.
-- `parfeval`: asynchronous work queue; recommended for larger systems.
+- `parfeval`: asynchronous global work queue; the scheduler comparison applies
+  to this mode.
 
 Batch entry points are `run_batch.m`, `run_batch_par.m`, and
 `run_batch_parfeval.m`.
 
-## Resuming A Ceased Search
+## Numerical evidence
 
-The v4 runbook scripts write periodic checkpoints to `temp_result.mat` during
-long `parfor` and `parfeval` runs. If MATLAB, the machine, or a long job stops
-after this file has appeared, resume from the same solver folder:
+The retained v4 benchmark is the direct historical baseline. It covered all
+20 bundled cases through case57 on MATLAB R2022a/Windows x64 with 23 workers:
+
+| v4 implementation | Cases | Aggregate wall time | Trace wall time | Solutions summed across cases |
+| --- | ---: | ---: | ---: | ---: |
+| MEX v4 | 20 | 718.656 s | 716.062 s | 3256 |
+| Pure MATLAB v4 | 20 | 1272.966 s | 1271.222 s | 3256 |
+
+The v4 MEX and pure-MATLAB packages agreed on every solution count; their
+largest order-independent nearest-solution distance was `3.154e-7`, below the
+shared `4e-7` deduplication tolerance. These v4 timings are historical and are
+not mixed with the V5 scheduler timings.
+
+The V5 scheduler benchmark compares `scan`, `bandit`, and `novelty` on the MEX
+implementation for every bundled case through case57, with three repeats per
+policy. Its report and CSV are
+`SCHEDULER_BENCHMARK_v5.md` and `scheduler_benchmark_v5_summary.csv`.
+
+All published V5 numerical and timing values come solely from official
+dataset `20260724_3x23`, produced on the designated main job machine with
+MATLAB R2022a on Windows x64 and 23 workers. Results produced on other machines
+are not merged into the release evidence. `BENCHMARK_METADATA_v5.json` records
+the platform, policy settings, deduplication settings, and provenance; the
+exact Git commit and machine identifier were not recorded at execution time and
+are therefore reported as unknown rather than inferred afterward. The run used
+the source-equivalent V5.5 development tree; metadata records both the
+benchmark-time and reproducibly rebuilt release KLU hashes.
+
+All 180 measured runs passed. Summed exhaustive wall time was effectively tied
+at 606.947 s (`scan`), 607.184 s (`bandit`), and 606.698 s (`novelty`). In
+contrast, the summed trace-to-90% metric fell from 35,975 for `scan` to 16,611
+for `bandit` (53.8% lower) and 11,975 for `novelty` (66.7% lower). A separate
+40-run order-independent audit matched every adaptive-policy solution set to
+its scan reference; the worst distance was `2.66e-9`, below `4e-7`.
+
+The report and PDFs include exhaustive-time, trace-to-90%, anytime-discovery,
+and case14mod/case39 connectivity plots. Connectivity panels contain identical
+validated solution sets; their colors and edges visualize scheduler traversal
+history.
+
+## Checkpoint and resume
+
+Long parallel runs write `temp_result.mat`. Resume in the same implementation
+folder and with the same case/load preprocessing:
 
 ```matlab
-cd('<path_to_HEBCPF>/HEBCPF_MEX_v4_20260715')       % same folder used originally
+cd('<path_to_HEBCPF>/HEBCPF_MEX_v5')
 addpath(pwd)
-
-% First run main.m or equivalent preprocessing for the same case/load setting.
-% Then load the saved solver state and run the same collection driver.
 load temp_result.mat
+
+global HEBCPOLICY
+HEBCPOLICY = 'novelty';                 % may differ from the saved policy
 wait = 0;
-run('runVBook_hybrid_parfeval.m')                   % or runVBook_hybrid_parallel.m
+run('runVBook_hybrid_parfeval.m')
 ```
 
-For the serial driver, save the workspace manually before stopping:
+The three canonical schedulers share checkpoint state. Learned equation gains
+are reused by `bandit` and `novelty`; policy-local cursors and novelty
+projections are rebuilt. The bundled
+`test_checkpoint_policy_compatibility_v5.m` harness exercises cross-policy
+resume in both implementations; no result produced on a non-designated machine
+is included in the published release evidence.
 
-```matlab
-save('my_checkpoint.mat', '-v7.3')
-```
+Two environment controls exist for deterministic checkpoint testing:
+`HEBCPF_CHECKPOINT_TRACE_INTERVAL` and `HEBCPF_STOP_AFTER_CHECKPOINT=true`.
+When unset, the production time-based cadence is unchanged.
 
-then resume with:
+## Documentation and outputs
 
-```matlab
-load my_checkpoint.mat
-wait = 0;
-run('runVBook_hybrid_2023.m')
-```
+- `HEBCPF_Suite_Overview.pdf`: release-level V5-versus-v4 comparison.
+- `HEBCPF_MEX_v5/HEBCPF_User_Guide.pdf`: MEX user guide.
+- `HEBCPF_matlab_v5/HEBCPF_User_Guide.pdf`: pure-MATLAB user guide.
+- `POLICY_README.md`: scheduler algorithms and complexity.
+- `SCHEDULER_BENCHMARK_v5.md`: official V5 three-policy report.
+- `scheduler_benchmark_v5_summary.csv`: machine-readable averaged results.
+- `scheduler_benchmark_v5_overall.csv`: suite-level scheduler statistics.
+- `BENCHMARK_METADATA_v5.json`: official dataset identity and provenance.
+- `release_assets/HEBCPF-v5-benchmark-raw.zip`: portable raw CSV, trace
+  histories, validation data, and references, attached separately to the
+  GitHub Release with its SHA-256 checksum.
+- `release_assets/HEBCPF-v5-klurf-source-SuiteSparse-v7.12.2.zip`: exact pinned
+  source, licenses, build metadata, smoke check, and V5 `klurf.mexw64`, attached
+  beside the standalone V5 MEX and both SHA-256 files.
 
-Resume checkpoints are framework-specific. Resume a `parfeval` checkpoint with
-`runVBook_hybrid_parfeval.m`, a `parfor` checkpoint with
-`runVBook_hybrid_parallel.m`, and a serial checkpoint with
-`runVBook_hybrid_2023.m`. The case, load factor, and solver folder must match
-the original run.
+To produce a future official benchmark on the designated main job machine,
+set `HEBCPF_SCHED_BENCH_WORKERS=23` and `HEBCPF_SCHED_BENCH_ROOT` before running
+`run_scheduler_benchmark_v5`. After reviewing the completed run and marking
+its generated metadata as `official release evidence`, set
+`HEBCPF_PUBLISH_BENCHMARK=true` before running
+`generate_scheduler_benchmark_report_v5`. The report generator rejects
+unapproved metadata, incomplete case-policy matrices, failed validation rows,
+and worker-count mismatches.
 
-## Documentation
+When rebuilding the LaTeX documentation, run `pdflatex` from the document's
+own folder at least twice (a third pass is harmless). The first pass creates
+the table-of-contents and cross-reference data; the next pass writes those
+entries into the PDF. In TeXstudio, use a build command configured to rerun
+LaTeX when references have changed.
 
-- `HEBCPF_Suite_Overview.pdf`: release-level orientation and solver comparison.
-- `HEBCPF_MEX_v4_20260715/HEBCPF_User_Guide.pdf`: MEX solver guide.
-- `HEBCPF_matlab_v4_20260715/HEBCPF_User_Guide.pdf`: pure MATLAB solver guide.
-- `HEBCPF_MEX_v4_20260715/README_v4.md`: concise MEX v4 notes.
-- `HEBCPF_matlab_v4_20260715/README_v4_pure.md`: concise pure MATLAB v4 notes.
+`run_merged_case` returns a result struct and solution matrix. In V5 the
+result also includes the normalized scheduler name and `trace_metrics`, with
+traces to 50%, 90%, and 99% of the final solution count, wall time to 90%,
+worker-trace statistics, scheduler selection time, and trace histories.
 
-## Outputs
+## License, attribution, and citation
 
-`run_merged_case` returns a result struct and the solution matrix. The result
-includes the case name, selected mode, number of solutions, maximum algebraic
-residual, and trace wall-clock time. Batch drivers write CSV summaries in the
-run folder:
-
-- `results_summary.csv`
-- `results_par_summary.csv`
-- `results_parfeval_summary.csv`
-
-Generated checkpoint files, temporary MATLAB outputs, and CSV timing summaries
-are ignored by the release `.gitignore`.
-
-## Release Notes
-
-See `CHANGELOG.md`, `RELEASE_NOTES_20260715.md`, and
-`RELEASE_CHECKLIST_20260715.md`. This release records the completed v4
-benchmark and adds tested checkpoint/resume support for long searches. The
-queue scheduler, cached holomorphic operations, and lower-allocation Pade
-evaluation are inherited v4 features.
-
-## License, Attribution, and Citation
-
-HEBCPF is distributed under the BSD 3-Clause License. See `LICENSE`.
+HEBCPF is distributed under the BSD 3-Clause License; see `LICENSE`.
 MATPOWER and SuiteSparse/KLU remain third-party software under their own terms;
-see `NOTICE` and the individual source notices.
-
-If you use HEBCPF, cite the HEBC paper and, when appropriate, this software
-package through `CITATION.cff`.
+see `NOTICE` and the individual source notices. Citation metadata is provided
+in `CITATION.cff`.
