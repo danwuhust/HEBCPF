@@ -7,11 +7,11 @@ authors:
     given-names: Dan
   - family-names: Wang
     given-names: Bin
-version: "5.0.0"
-date-released: "2026-07-26"
+version: "5.2.0"
+date-released: "2026-07-30"
 license: BSD-3-Clause
 repository-code: "https://github.com/danwuhust/HEBCPF"
-abstract: "MATLAB solver suite for finding all real-valued AC power-flow solutions using holomorphic-embedding-based continuation, with scan, bandit, and novelty scheduling for asynchronous enumeration."
+abstract: "MATLAB solver suite for finding all real-valued AC power-flow solutions using holomorphic-embedding-based continuation, with pure-MATLAB and Windows x64 MEX implementations and scan, bandit, and novelty scheduling."
 preferred-citation:
   type: article
   authors:

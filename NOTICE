@@ -2,7 +2,8 @@ HEBCPF Third-Party Notices
 ==========================
 
 HEBCPF depends on MATPOWER at runtime. The solver calls MATPOWER functions
-including, but not limited to, `runpf`, `makeYbus`, `idx_bus`, and `idx_brch`.
+including, but not limited to, `runpf`, `makeYbus`, `ext2int`, `idx_bus`,
+`idx_brch`, and `idx_gen`.
 MATPOWER must be installed separately and added to the MATLAB path.
 
 MATPOWER:
@@ -83,12 +84,12 @@ terms, including GNU LGPL-2.1-or-later terms for KLU. Users who rebuild,
 modify, or redistribute the KLU-linked MEX must review the authoritative
 SuiteSparse license texts and meet the applicable redistribution requirements.
 
-For reproducible redistribution, the V5 GitHub Release assets include the
+For reproducible redistribution, the V5.2 GitHub Release assets include the
 Windows x64 MEX rebuilt from official SuiteSparse v7.12.2, Git commit
 42151688813c45846a597edcb601435a0e38f3dd, together with a matching source
 archive and SHA-256 checksums. The source archive retains the exact required
 KLU, BTF, AMD, COLAMD, and SuiteSparse_config source and license material. The
-archived binary hash matches the copies in `klurf/` and `HEBCPF_MEX_v5/`.
+archived binary hash matches the copies in `klurf/` and `HEBCPF_MEX_v5.2/`.
 
 Citation
 --------

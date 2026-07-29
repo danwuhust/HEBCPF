@@ -4,7 +4,7 @@ function validation = validate_scheduler_solution_sets_v5()
 % untimed validation run for bandit and novelty on every case through case57.
 
 release_root = fileparts(mfilename('fullpath'));
-solver_dir = fullfile(release_root,'HEBCPF_MEX_v5');
+solver_dir = fullfile(release_root,'HEBCPF_MEX_v5.2');
 benchmark_root = strtrim(getenv('HEBCPF_SCHED_BENCH_ROOT'));
 if isempty(benchmark_root)
     error('HEBCPF:MissingBenchmarkRoot', ...

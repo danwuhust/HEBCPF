@@ -1,0 +1,110 @@
+# HEBCPF MEX v5.2
+
+This folder is the Windows x64 MEX-accelerated v5 solver. It keeps the usual
+HEBCPF workflows (`main.m`, `run_batch*.m`, `run_merged_case.m`) and uses the
+same case files and solver parameters as the pure MATLAB v5.2 folder.
+
+## What v5 Adds To v4
+
+| Area | Change | Main Files |
+| --- | --- | --- |
+| Scheduler | `runVBook_hybrid_parfeval.m` adds `scan`, `bandit` (default), and bounded `novelty` dispatch while preserving one in-flight trace per equation. The older row-barrier scheduler is retained for historical comparison. | `runVBook_hybrid_parfeval.m`, `trace_policy_config.m` |
+| Holomorphic LU | Sparse `lu` column ordering is cached per case and reused. | `lu_cached.m`, `holomorphic_hybrid_5_with_mex.m` |
+| Holomorphic assembly | Constant network blocks and stacked quadratic operators are reused. | `holomorphic_para_sp.m` |
+| Pade evaluation | Voltage numerator/denominator polynomials are evaluated with lower allocation. | `update_V_Pade.m` |
+| Resume support | Periodic checkpoints are written to `temp_result.mat`; `VBook/Zsave` checkpoints resume without re-seeding. | `runVBook_hybrid_parallel.m`, `runVBook_hybrid_parfeval.m`, `runVBook_hybrid_parfeval_barrier.m` |
+
+Default numerical settings include deterministic keyed deduplication,
+consensus Pade-pole selection, and `slope_max = 4e5`.
+
+The mathematical formulation and hot paths are inherited from v4. Version 5
+adds scheduler choice, anytime instrumentation, policy-safe checkpoint/resume,
+and the accompanying three-repeat scheduler benchmark.
+
+## V5.2 Sparse Preprocessing
+
+The MEX and pure-MATLAB packages now share the same sparse power-flow matrix
+setup. `get_quadr_mtrx.m` avoids dense cubic-memory arrays, while
+`quadr_matrix.m` aggregates online generation by bus, validates generator
+voltage setpoints, and preserves the established equation ordering. All entry
+points normalize MATPOWER cases with `ext2int`, and non-symmetric `Ybus`
+matrices such as phase-shifting transformer models are handled directly.
+
+## Historical v4 Benchmark Result
+
+In the retained 2026.07.15 queue-`parfeval` benchmark, the v4 predecessor completed all 20
+cases through 57 buses in 718.656 s, versus 1272.966 s for the companion pure
+MATLAB package (1.77x less aggregate wall time). Both packages returned the
+same solution count for every case. The maximum order-independent
+nearest-solution distance was `3.154e-7`, below the shared `4e-7` tolerance.
+The full table and conditions are in `../HEBCPF_Suite_Overview.pdf`.
+
+## V5.2 Pure MATLAB Versus MEX
+
+The V5.2 packages were compared on all 20 bundled cases through `case57` with
+queue `parfeval`, the `bandit` scheduler, three repeats per case, and a shared
+persistent 23-worker pool. Both packages completed 3,254 solutions. From the
+rounded table, the MEX package used 586.3 s in summed search wall time versus
+1,145.3 s for pure MATLAB, a 1.95x aggregate ratio; the geometric-mean
+case-wise wall-time factor was 1.59x in favor of MEX.
+
+See `../MATLAB_BENCHMARK_V5.2.md` for the complete table and environment. Raw
+repeat records and residual vectors are unavailable for this comparison, so
+it supports a solution-count agreement claim but no new residual-distance
+claim.
+
+## Run One Case
+
+```matlab
+cd('<path>/HEBCPF_MEX_v5.2')
+addpath(pwd)
+[result, solutions] = run_merged_case('case14mod', 'parfeval');
+```
+
+Use `serial`, `parfor`, or `parfeval` as the second argument. `parfeval` is the
+recommended mode for large cases.
+
+## Resume A Ceased Search
+
+For `parfor`, `parfeval`, and the retained `parfeval` barrier driver, long runs
+periodically write `temp_result.mat`. Resume from the same folder, same case,
+and same load factor:
+
+```matlab
+load temp_result.mat
+wait = 0;
+run('runVBook_hybrid_parfeval.m')          % or runVBook_hybrid_parallel.m
+```
+
+For the retained barrier scheduler:
+
+```matlab
+load temp_result.mat
+wait = 0;
+run('runVBook_hybrid_parfeval_barrier.m')
+```
+
+The resume path rebuilds runtime-only futures, parallel pools, pool constants,
+and keyed deduplication state. Do not rename the checkpoint file inside the
+drivers; the periodic checkpoint name is intentionally `temp_result.mat`.
+
+## MEX And KLU Notes
+
+This release includes Windows x64 binaries:
+
+- `Pade_Apprxmt_mex.mexw64`
+- `holomorphic_cont_tri_mex.mexw64`
+- `klurf.mexw64`
+
+Run `build_mex.m` only if you change the hot-path source or need to rebuild for
+your local MATLAB/compiler setup. The solver falls back to non-KLU dense solves
+if `klurf` is unavailable.
+
+## Validation Notes
+
+Checkpoint/resume behavior was regression-tested by comparing full runs
+against forced checkpoint/resume runs on `case14mod` and `case39` for the MEX
+parallel, queue `parfeval`, and barrier `parfeval` drivers. The official V5
+scheduler benchmark covers all 20 bundled cases through 57 buses, and its
+separately archived solution-set audit matched within the shared `4e-7`
+keyed-deduplication tolerance.

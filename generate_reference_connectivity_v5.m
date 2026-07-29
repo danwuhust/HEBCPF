@@ -26,7 +26,7 @@ if ~isfolder(reference_root)
         ['V5 reference MAT files are not present. Extract the benchmark raw ' ...
          'release asset or pass its references directory as reference_root.']);
 end
-addpath(fullfile(release_root,'HEBCPF_MEX_v5'));
+addpath(fullfile(release_root,'HEBCPF_MEX_v5.2'));
 
 cases = {'case30','case57'};
 restarts = [6 4];

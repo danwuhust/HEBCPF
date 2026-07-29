@@ -1,11 +1,11 @@
 function results = smoke_test_v5()
-%SMOKE_TEST_V5 Final scheduler/implementation smoke matrix.
+%SMOKE_TEST_V5 V5.2 scheduler/implementation smoke matrix.
 % Runs case3, case5loop, and case14mod with all three schedulers in both the
 % MEX and pure-MATLAB implementations. A persistent pool excludes pool startup
 % from repeated setup and keeps this test short enough for release checks.
 
 release_root = fileparts(mfilename('fullpath'));
-implementations = {'HEBCPF_MEX_v5','HEBCPF_matlab_v5'};
+implementations = {'HEBCPF_MEX_v5.2','HEBCPF_matlab_v5.2'};
 cases = {'case3','case5loop','case14mod'};
 expected = [6,10,30];
 policies = {'scan','bandit','novelty'};
@@ -55,9 +55,9 @@ end
 results = struct2table(rows,'AsArray',true);
 out_dir = fullfile(release_root,'tmp');
 if ~exist(out_dir,'dir'); mkdir(out_dir); end
-writetable(results,fullfile(out_dir,'smoke_test_v5.csv'));
+writetable(results,fullfile(out_dir,'smoke_test_v5.2.csv'));
 assert(all(strcmp(results.status,'PASS')), ...
-    'HEBCPF:SmokeTest','At least one v5 smoke-test run failed.');
+    'HEBCPF:SmokeTest','At least one v5.2 smoke-test run failed.');
 delete(gcp('nocreate'));
 end
 

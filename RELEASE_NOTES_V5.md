@@ -1,10 +1,10 @@
-# HEBCPF Solver Suite V5
+# HEBCPF Solver Suite v5.0.0 (Historical Release Notes)
 
 - Version: `5.0.0`
 - Git tag: `v5.0.0`
 - Release date: 2026-07-26
 
-The current package contains the V5 solver line in two folders:
+The historical v5.0.0 package contained the V5 solver line in two folders:
 
 - `HEBCPF_MEX_v5`: Windows x64 MEX-accelerated solver.
 - `HEBCPF_matlab_v5`: portable pure MATLAB solver.

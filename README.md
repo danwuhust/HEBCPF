@@ -1,14 +1,37 @@
-# HEBCPF Solver Suite V5
+# HEBCPF MATLAB Solver Suite V5.2
 
 HEBCPF is a MATLAB solver suite for enumerating real-valued solutions of AC
 power-flow equations by holomorphic-embedding-based continuation (HEBC).
 
-This release contains two equivalent implementations:
+This release contains the two MATLAB implementations of the solver:
 
 | Folder | Implementation | Best use |
 | --- | --- | --- |
-| `HEBCPF_MEX_v5` | Windows x64 MEX-accelerated V5 | Fastest supported Windows configuration |
-| `HEBCPF_matlab_v5` | Pure MATLAB V5 | Portable, inspectable, and compiler-free |
+| `HEBCPF_MEX_v5.2` | Windows x64 MEX-accelerated V5.2 | Fastest supported Windows configuration |
+| `HEBCPF_matlab_v5.2` | Pure MATLAB V5.2 | Portable, inspectable, and compiler-free |
+
+The two builds use the same formulation, cases, tolerances, and scheduler
+semantics. They returned the same completed solution count on every case in
+the published V5.2 comparison; the MEX build compiles selected hot paths. Each
+folder contains a full PDF user guide. **Python** implementations of the same
+method (pure Python and native Cython) are released separately as the
+`pyHEBCPF` v5.2 suite.
+
+## V5.2 preprocessing update
+
+V5.2 retains the V5 tracing, scheduler, checkpoint, and numerical settings but
+replaces the dense cubic-memory power-flow matrix setup with sparse assembly.
+All implementations construct real sparse quadratic forms directly from the
+real and imaginary parts of `Ybus`. Cases are normalized to internal bus order;
+active generation is summed across online generators at each PV bus, and shared
+voltage setpoints are validated. This also supports non-symmetric `Ybus`
+matrices arising from phase-shifting transformers.
+
+V5.2 also adds a matched pure-MATLAB-versus-MEX comparison for all 20 completed
+cases through 57 buses. That comparison is reported separately from the
+official V5 scheduler dataset because it answers a different question: the
+implementation speed difference with the scheduler, cases, and worker pool
+held fixed.
 
 ## Direct comparison with v4
 
@@ -31,21 +54,23 @@ profile; it does not intentionally change the completed solution set.
 
 ## Requirements
 
-- MATLAB R2022a or later. V5 was prepared with R2022a.
+MATLAB implementations:
+
+- MATLAB R2022a or later. V5.2 was prepared with R2022a.
 - MATPOWER 7.1 or a compatible release on the MATLAB path.
 - Parallel Computing Toolbox for the `parfor` and `parfeval` drivers.
 - MATLAB Coder and a supported compiler only when rebuilding MEX binaries.
 
-HEBCPF calls MATPOWER's installed `runpf`, `makeYbus`, `idx_bus`, and
-`idx_brch`; MATPOWER is not redistributed in this package.
+HEBCPF calls MATPOWER's installed `runpf`, `makeYbus`, `ext2int`, `idx_bus`,
+`idx_gen`, and `idx_brch`; MATPOWER is not redistributed in this package.
 
-## Quick start
+## MATLAB quick start
 
 Add only one implementation folder to the MATLAB path because both folders
 contain functions and cases with the same names.
 
 ```matlab
-cd('<path_to_HEBCPF>/HEBCPF_MEX_v5')  % or HEBCPF_matlab_v5
+cd('<path_to_HEBCPF>/HEBCPF_MEX_v5.2')  % or HEBCPF_matlab_v5.2
 addpath(pwd)
 
 global HEBCPOLICY
@@ -68,7 +93,33 @@ Available execution modes are:
 Batch entry points are `run_batch.m`, `run_batch_par.m`, and
 `run_batch_parfeval.m`.
 
+For the Python implementations of the same method, see the separate `pyHEBCPF`
+v5.2 suite.
+
 ## Numerical evidence
+
+### V5.2 pure MATLAB versus MEX
+
+Both V5.2 implementations were compared with queue `parfeval`, the `bandit`
+scheduler, a shared persistent 23-worker pool, and three repeats per case.
+Pool startup was excluded. The run used MATLAB R2022a on the recorded Windows
+x64 comparison host (Intel Core i9-13900K, 24 cores/32 threads, 128 GB RAM).
+
+Across the 20 cases, both packages returned the same case-by-case solution
+counts, totaling 3,254 solutions under the corrected V5.2 preprocessing. Based
+on the rounded published table, pure MATLAB required 1,145.3 s in summed search
+wall time and MEX required 586.3 s, an aggregate factor of 1.95x. The
+geometric-mean case-wise wall factor is 1.59x, while the geometric-mean
+per-trace kernel factor is 1.97x. Small cases can be dominated by dispatch and
+bookkeeping overhead; the compiled advantage is clearest on the larger cases.
+
+The full case table, scope, and limitations are in
+`MATLAB_BENCHMARK_V5.2.md`. The surviving artifact does not contain
+per-solution residual vectors or the raw repeated-run records, so V5.2 makes a
+solution-count agreement claim but no new residual-distance claim from this
+comparison.
+
+### Historical v4 and V5 scheduler evidence
 
 The retained v4 benchmark is the direct historical baseline. It covered all
 20 bundled cases through case57 on MATLAB R2022a/Windows x64 with 23 workers:
@@ -116,7 +167,7 @@ Long parallel runs write `temp_result.mat`. Resume in the same implementation
 folder and with the same case/load preprocessing:
 
 ```matlab
-cd('<path_to_HEBCPF>/HEBCPF_MEX_v5')
+cd('<path_to_HEBCPF>/HEBCPF_MEX_v5.2')
 addpath(pwd)
 load temp_result.mat
 
@@ -140,8 +191,16 @@ When unset, the production time-based cadence is unchanged.
 ## Documentation and outputs
 
 - `HEBCPF_Suite_Overview.pdf`: release-level V5-versus-v4 comparison.
-- `HEBCPF_MEX_v5/HEBCPF_User_Guide.pdf`: MEX user guide.
-- `HEBCPF_matlab_v5/HEBCPF_User_Guide.pdf`: pure-MATLAB user guide.
+- `RELEASE_NOTES_V5.2.md`: GitHub Release description for tag `v5.2.0`.
+- `RELEASE_CHECKLIST_V5.2.md`: final repository, documentation, test, asset,
+  and Git verification checklist.
+- `HEBCPF_MEX_v5.2/HEBCPF_User_Guide.pdf`: MEX user guide.
+- `HEBCPF_matlab_v5.2/HEBCPF_User_Guide.pdf`: pure-MATLAB user guide.
+- `MATLAB_BENCHMARK_V5.2.md`: GitHub-readable pure-vs-MEX protocol, complete
+  case table, aggregate statistics, and limitations.
+- `MATLAB_BENCHMARK_METADATA_V5.2.json`: machine-readable identity and
+  provenance boundary for that comparison.
+- `matlab_benchmark.tex/png`: pure-vs-MEX benchmark fragment.
 - `POLICY_README.md`: scheduler algorithms and complexity.
 - `SCHEDULER_BENCHMARK_v5.md`: official V5 three-policy report.
 - `scheduler_benchmark_v5_summary.csv`: machine-readable averaged results.

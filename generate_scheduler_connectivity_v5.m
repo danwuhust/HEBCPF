@@ -1,7 +1,7 @@
 function generate_scheduler_connectivity_v5()
 %GENERATE_SCHEDULER_CONNECTIVITY_V5 Case14mod diagrams for all queue policies.
 release_root = fileparts(mfilename('fullpath'));
-solver_dir = fullfile(release_root,'HEBCPF_MEX_v5');
+solver_dir = fullfile(release_root,'HEBCPF_MEX_v5.2');
 policies = {'scan','bandit','novelty'};
 cases = {'case14mod','case39'};
 p = gcp('nocreate');

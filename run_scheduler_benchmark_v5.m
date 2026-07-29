@@ -1,5 +1,5 @@
 function run_scheduler_benchmark_v5()
-%RUN_SCHEDULER_BENCHMARK_V5 Three-repeat MEX scheduler comparison through case57.
+%RUN_SCHEDULER_BENCHMARK_V5 V5.2 MEX scheduler comparison through case57.
 % Canonical policies: scan, bandit, novelty. The pool is warmed once and kept
 % alive; pool startup and untimed warm-ups are excluded from recorded times.
 %
@@ -11,7 +11,7 @@ function run_scheduler_benchmark_v5()
 %   HEBCPF_SCHED_BENCH_ROOT    existing/new output directory
 
 release_root = fileparts(mfilename('fullpath'));
-solver_dir = fullfile(release_root,'HEBCPF_MEX_v5');
+solver_dir = fullfile(release_root,'HEBCPF_MEX_v5.2');
 cases_to_run = {'case3','case3TS','case4BB0','case4BBc','case4gs', ...
     'case5loop','case5Salam','case5Salam_mod3','case6ww','case7Salam', ...
     'case9','case9Q','case14mod','case14mod2','case30','case33bw', ...
@@ -41,7 +41,7 @@ end
 
 root_override = strtrim(getenv('HEBCPF_SCHED_BENCH_ROOT'));
 if isempty(root_override)
-    results_root = fullfile(release_root,'scheduler_benchmark_v5',datestr(now,'yyyymmdd_HHMMSS'));
+    results_root = fullfile(release_root,'scheduler_benchmark_v5.2',datestr(now,'yyyymmdd_HHMMSS'));
 else
     results_root = root_override;
 end
@@ -85,7 +85,7 @@ fprintf('Workers: %d; pool startup %.3f s (excluded)\n',p.NumWorkers,pool_start_
 solver_cfg = solver_params();
 metadata = benchmark_metadata(release_root,cases_to_run,policies,repeats, ...
     p.NumWorkers,policy_cfg,solver_cfg,pool_start_sec);
-write_json(fullfile(results_root,'benchmark_metadata_v5.json'),metadata);
+    write_json(fullfile(results_root,'benchmark_metadata_v5.2.json'),metadata);
 
 % Untimed warm-up removes first-use JIT/MEX/pool effects from the three repeats.
 global HEBCPOLICY %#ok<GVMIS>
@@ -305,7 +305,7 @@ function metadata = benchmark_metadata(release_root,cases_to_run,policies,repeat
 metadata = struct();
 metadata.schema_version = 1;
 metadata.benchmark_id = datestr(now,'yyyymmdd_HHMMSS');
-metadata.suite_version = '5.0.0';
+metadata.suite_version = '5.2.0';
 metadata.generated_at = datestr(now,30);
 metadata.machine_role = 'benchmark execution machine';
 metadata.machine_identifier = strtrim(getenv('COMPUTERNAME'));

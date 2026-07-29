@@ -1,10 +1,10 @@
 function run_benchmark_up_to_57bus_v5()
 %RUN_BENCHMARK_UP_TO_57BUS_V5
-% Complete parfeval benchmark for the packaged HEBCPF v5 solvers.
+% Complete parfeval benchmark for the packaged HEBCPF v5.2 solvers.
 %
 % Scope:
-%   - HEBCPF_MEX_v5
-%   - HEBCPF_matlab_v5
+%   - HEBCPF_MEX_v5.2
+%   - HEBCPF_matlab_v5.2
 %   - all bundled cases up to and including 57 buses
 %
 % Timing convention:
@@ -13,7 +13,7 @@ function run_benchmark_up_to_57bus_v5()
 
 release_root = fileparts(mfilename('fullpath'));
 timestamp = datestr(now, 'yyyymmdd_HHMMSS');
-results_root = fullfile(release_root, 'benchmark_results_v5', timestamp);
+results_root = fullfile(release_root, 'benchmark_results_v5.2', timestamp);
 if ~exist(results_root, 'dir')
     mkdir(results_root);
 end
@@ -42,8 +42,8 @@ cases_to_run = { ...
     };
 
 solvers = struct( ...
-    'name', {'MEX_v5', 'matlab_v5'}, ...
-    'folder', {'HEBCPF_MEX_v5', 'HEBCPF_matlab_v5'}, ...
+    'name', {'MEX_v5.2', 'matlab_v5.2'}, ...
+    'folder', {'HEBCPF_MEX_v5.2', 'HEBCPF_matlab_v5.2'}, ...
     'resolveFcn', {'Resolve_with_mex', 'Resolve_no_mex'} ...
     );
 
@@ -67,7 +67,7 @@ benchmark_policy = strtrim(getenv('HEBCPF_BENCH_POLICY'));
 if isempty(benchmark_policy); benchmark_policy = 'bandit'; end
 
 metadata = struct();
-metadata.package = 'HEBCPF_v5';
+metadata.package = 'HEBCPF_v5.2';
 metadata.release_root = release_root;
 metadata.results_root = results_root;
 metadata.timestamp = timestamp;
@@ -78,7 +78,7 @@ metadata.matlab_version = version;
 metadata.computer = computer;
 metadata.timing_note = 'Per-case timings exclude parallel pool startup/shutdown.';
 
-fprintf('HEBCPF v5 benchmark: selected bundled cases through 57 buses\n');
+fprintf('HEBCPF v5.2 benchmark: selected bundled cases through 57 buses\n');
 fprintf('Results folder: %s\n', results_root);
 
 pool_start = tic;
@@ -153,6 +153,8 @@ for si = 1:numel(solvers)
                 mpc.gen(:,5) = -mpc.gen(:,9) * 0.6;
             end
 
+            mpc = ext2int(mpc); % normalize MATPOWER bus and generator indexing
+
             wait = 0; %#ok<NASGU>
             [Ybus, ~, ~] = makeYbus(mpc.baseMVA, mpc.bus, mpc.branch);
             [bus_n, ~] = size(mpc.bus);
@@ -176,11 +178,12 @@ for si = 1:numel(solvers)
             if result_mpc.success ~= 1
                 error('MATPOWER solve failed; could not obtain an initial point.');
             end
+            result_mpc = ext2int(result_mpc);
 
             t_quad = tic;
             fprintf('Build quadratic-form matrices...\n');
             [Mp, Mq] = get_quadr_mtrx(Ybus, bus_n);
-            [Ma, ba, npg, npd, nq, nv, I] = quadr_matrix(Mp, Mq, mpc, bus_n, gen_n, numofvar); %#ok<ASGLU>
+            [Ma, ba, I] = quadr_matrix(Mp, Mq, mpc, bus_n, gen_n, numofvar);
             [solu, solu0] = Solu(result_mpc, I.slack, bus_n); %#ok<ASGLU>
             Err = zeros(numofcons, 1);
             for ii = 1:numofcons

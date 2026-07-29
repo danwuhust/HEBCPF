@@ -35,7 +35,7 @@
 \lstset{style=sh}
 
 \pagestyle{fancy}\fancyhf{}
-\lhead{\small HEBCPF Solver Suite v5}
+\lhead{\small HEBCPF Solver Suite v5.2}
 \rhead{\small Overview}
 \cfoot{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -53,22 +53,23 @@
 \vspace*{2.0cm}
 {\color{rule}\rule{\textwidth}{1.2pt}}\\[8pt]
 {\Huge\bfseries HEBCPF Solver Suite}\\[8pt]
-{\Large Release v5}\\[8pt]
+{\Large Release v5.2.0}\\[8pt]
 {\color{rule}\rule{\textwidth}{1.2pt}}\\[18pt]
 {\large Holomorphic-Embedding-Based Continuation Power-Flow All-Solutions Solver}\\[12pt]
-{\large v5 MEX and pure-MATLAB release}\\[30pt]
+{\large v5.2 MATLAB solver suite}\\[24pt]
 
 \begin{tabular}{rl}
-\textbf{Compiled solver:} & \code{HEBCPF_MEX_v5}\\[3pt]
-\textbf{Portable solver:} & \code{HEBCPF_matlab_v5}\\[3pt]
+\textbf{Compiled solver:} & \code{HEBCPF_MEX_v5.2}\\[3pt]
+\textbf{Pure MATLAB solver:} & \code{HEBCPF_matlab_v5.2}\\[3pt]
 \textbf{Primary recommendation:} & use \code{parfeval} for large cases\\[3pt]
 \textbf{Checkpoint file:} & \code{temp_result.mat}\\
 \end{tabular}
 
 \vfill
-{\small This overview is a release-level map. Each solver folder contains its own
-\code{HEBCPF_User_Guide.pdf} with installation, parameters, and resume details.}\\[6pt]
-{\small July 26, 2026}
+{\small This overview covers only the MATLAB solvers. Each solver folder contains a full
+PDF user guide. For the Python implementations of the same method (pure and native), see
+the separate \code{pyHEBCPF} v5.2 suite.}\\[6pt]
+{\small Documentation updated July 30, 2026}
 \end{titlepage}
 
 \clearpage
@@ -78,24 +79,26 @@
 
 \section{Release Scope}
 
-This release packages the v5 HEBCPF solver in two forms:
+This release packages the v5.2 HEBCPF MATLAB solver in two forms:
 
 \begin{center}
-\begin{tabular}{@{}p{0.28\textwidth}p{0.28\textwidth}p{0.34\textwidth}@{}}
+\begin{tabular}{@{}p{0.27\textwidth}p{0.25\textwidth}p{0.38\textwidth}@{}}
 \toprule
 \textbf{Folder} & \textbf{Solver} & \textbf{Use it when}\\
 \midrule
-\textcolor{mexcol}{\code{HEBCPF_MEX_v5}} & Windows x64 MEX-accelerated v5 &
+\textcolor{mexcol}{\code{HEBCPF_MEX_v5.2}} & Windows x64 MEX-accelerated v5.2 &
 You want the fastest shipped build on a supported Windows MATLAB installation.\\
-\textcolor{matcol}{\code{HEBCPF_matlab_v5}} & Pure MATLAB v5 &
+\textcolor{matcol}{\code{HEBCPF_matlab_v5.2}} & Pure MATLAB v5.2 &
 You need portability, easier inspection, or a no-compiler/no-MEX workflow.\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Both solvers use the same HEBC formulation, MATPOWER-format cases, v4 numerical
-parameters, and user-facing drivers. They should not be placed on the MATLAB path at the
-same time because they contain functions with overlapping names.
+Both implementations use the same HEBC formulation, MATPOWER-format case data, and
+numerical defaults. In the published V5.2 comparison they return the same completed
+solution count on every tested case; the MEX build compiles selected hot paths. The two
+MATLAB folders must not share one MATLAB path. Python
+implementations of the same method are released separately as the \code{pyHEBCPF} suite.
 
 \section{V4 foundation and v5 additions}
 
@@ -121,31 +124,89 @@ same time because they contain functions with overlapping names.
         smoke check, and SHA-256 checksums.
 \end{itemize}
 
+\section{V5.2 sparse preprocessing update}
+
+V5.2 retains the V5 HEBC tracing, scheduler, checkpoint, and numerical settings. The
+quadratic preprocessing is synchronized across the two MATLAB folders:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Sparse quadratic construction.} \code{get_quadr_mtrx.m} constructs the
+        active- and reactive-power quadratic forms without the previous dense
+        $2n\times 2n\times n$ work arrays.
+  \item \textbf{General admittance matrices.} The matrices are formed directly from
+        $\Re(Y_{\mathrm{bus}})$ and $\Im(Y_{\mathrm{bus}})$, preserving equations for a
+        non-symmetric \code{Ybus}, including phase-shifting transformer models.
+  \item \textbf{Bus-based generator handling.} Scheduled active power is summed across
+        online generators at each PV bus. Shared voltage setpoints are checked instead of
+        relying on generator row order.
+  \item \textbf{MATPOWER internal indexing.} Cases and solved operating points are
+        normalized with \code{ext2int}; non-consecutive external bus labels such as those
+        in \code{case300} are therefore accepted by the preprocessing path.
+  \item \textbf{Shared formulation.} Both MATLAB builds use \code{get_quadr_mtrx} and
+        \code{quadr_matrix} to construct the same equation ordering.
+\end{itemize}
+
+A same-machine \code{matlab}-vs-\code{MEX} v5.2 comparison with a recorded execution
+environment is reported in Section~\ref{sec:fourway}. The V5 scheduler
+benchmark reproduced later in this document is retained as the designated-machine release
+evidence and is \emph{not} superseded by that same-machine comparison; all wall times are
+machine- and worker-count-dependent.
+
+\section{V5.2 Pure-vs-MEX Numerical Comparison}\label{sec:fourway}
+
+This section reports a matched, same-machine comparison of the two v5.2 MATLAB solvers ---
+\textcolor{matcol}{\code{HEBCPF_matlab_v5.2}} (pure MATLAB) and
+\textcolor{mexcol}{\code{HEBCPF_MEX_v5.2}} (MEX) --- on every bundled case
+up to and including \code{case57}.
+
+\textbf{Protocol.} Both builds ran the \emph{asynchronous parallel} queue \code{parfeval}
+search under the \code{bandit} scheduler, on the 20 cases through \code{case57},
+\textbf{three repeats per case}, averaged, on the same machine with a shared persistent
+\code{parpool} (startup excluded from every per-case time). Case-by-case solution counts
+agree; timing is reported as both an implementation-independent \emph{per-trace}
+kernel cost and an \emph{end-to-end} search wall time.
+
+\textbf{Machine and environment.} Intel Core i9-13900K (24 cores/32 threads), 128~GB RAM,
+Windows 11 Pro x64, MATLAB R2022a (9.12) on \code{PCWIN64}, and a 23-worker local
+\code{parpool}; run dated July 27, 2026. These numbers characterize this comparison host
+and are not a replacement for the designated V5 scheduler dataset.
+
+\textbf{Comparison.} The pure-MATLAB and MEX builds use the same formulation, cases,
+tolerances, and scheduler semantics, and return the same solution count on every case. The
+MEX build differs only in that its hot path (the KLU
+corrector plus compiled Pad\'e and holomorphic kernels) is compiled, which is where the
+per-trace speed-up comes from. The preserved comparison artifact does not contain
+per-solution residual vectors or raw repeated-run records, so this release makes no new
+residual-distance claim from that table.
+
+\IfFileExists{matlab_benchmark.tex}{\input{matlab_benchmark.tex}}{%
+\textit{The pure-vs-MEX comparison table and figure are generated into
+\code{matlab_benchmark.tex} by the suite benchmark harness and included here on the next
+build.}}
+
+The GitHub-readable table and provenance boundary are recorded in
+\code{MATLAB_BENCHMARK_V5.2.md} and \code{MATLAB_BENCHMARK_METADATA_V5.2.json}.
+
 \input{HEBCPF_Suite_Scheduler_Sections.tex}
 
 \section{Choosing A Solver}
 
 \begin{center}
-\begin{tabular}{@{}p{0.28\textwidth}p{0.31\textwidth}p{0.31\textwidth}@{}}
+\begin{tabular}{@{}p{0.25\textwidth}p{0.30\textwidth}p{0.35\textwidth}@{}}
 \toprule
-\textbf{Question} & \textbf{MEX v5} & \textbf{Pure MATLAB v5}\\
+\textbf{Folder} & \textbf{Choose it when} & \textbf{Important note}\\
 \midrule
-Windows x64 MATLAB? & Recommended. Shipped \code{.mexw64} binaries are included. &
-Works, but generally slower.\\
-Linux or macOS? & Rebuild MEX binaries first, or use pure MATLAB. &
-Recommended out of the box.\\
-Need to inspect or modify hot-path code? & Possible, but rebuild if changing MEX source. &
-Recommended for experimentation.\\
-Need maximum speed? & Recommended. & Use when portability matters more than speed.\\
-Need no compiler? & Works on Windows x64 with shipped binaries. &
-Always works without a compiler.\\
+\code{HEBCPF_MEX_v5.2} & You use MATLAB on Windows x64 and prefer the shipped accelerated path. &
+MATPOWER is required; rebuilding MEX/KLU components needs supported toolchains.\\
+\code{HEBCPF_matlab_v5.2} & You need portable, inspectable MATLAB code. &
+No HEBCPF compiler is needed; parallel modes need Parallel Computing Toolbox.\\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \section{Choosing A Mode}
 
-Each solver has three main collection modes:
+The MATLAB solvers have three main collection modes:
 
 \begin{description}[leftmargin=0em,style=nextline]
 \item[\code{serial}] Uses \code{runVBook_hybrid_2023.m}. It is the easiest mode to debug
@@ -200,7 +261,7 @@ The following limits are important when interpreting the package and its measure
 \section{Quick Start}
 
 \begin{lstlisting}[style=mat]
-cd('<path>/HEBCPF_MEX_v5')       % or HEBCPF_matlab_v5
+cd('<path>/HEBCPF_MEX_v5.2')       % or HEBCPF_matlab_v5.2
 addpath(pwd)
 
 which runpf
@@ -236,7 +297,7 @@ The parallel v5 runbooks write periodic checkpoints to \code{temp_result.mat}. T
 \end{enumerate}
 
 \begin{lstlisting}[style=mat]
-cd('<path>/HEBCPF_MEX_v5')       % or the pure MATLAB folder
+cd('<path>/HEBCPF_MEX_v5.2')       % or the pure MATLAB folder
 addpath(pwd)
 load temp_result.mat
 wait = 0;
@@ -271,21 +332,24 @@ parallel-pool objects are not restored from the checkpoint.
 \begin{center}\small
 \begin{tabular}{@{}p{0.19\linewidth}p{0.27\linewidth}p{0.18\linewidth}p{0.28\linewidth}@{}}
 \toprule
-\code{case3} (6) & \code{case4gs} (6) & \code{case4BB0} (14) & \code{case4BBc} (12)\\
+\code{case3} (6) & \code{case4gs} (4)$^\dagger$ & \code{case4BB0} (14) & \code{case4BBc} (12)\\
 \code{case5loop} (10) & \code{case5Salam} (10) & \code{case6ww} (6) & \code{case7Salam} (4)\\
-\code{case9} (8) & \code{case9Q} (8) & \code{case14mod} (30) & \code{case33bw} (16)\\
-\code{case39} (176) & \code{case30}/\code{case_ieee30} (472) & \code{case57mod} (606) & \code{case57} (1322)\\
-\multicolumn{4}{c}{\code{case118}: bundled test case; no completed reference count claimed}\\
+\code{case9} (8) & \code{case9Q} (8) & \code{case14mod} (30) & \code{case14mod2} (68)\\
+\code{case33bw} (16) & \code{case39} (176) & \code{case30}/\code{case_ieee30} (472) & \code{case57mod} (606)\\
+\code{case57} (1322) & \multicolumn{3}{l}{\code{case118}: bundled; no completed reference count claimed}\\
 \bottomrule
 \end{tabular}
 \end{center}
 
 Counts above are nominal-load reference counts for the completed bundled benchmarks,
-collapsing antipodal duplicates in the solver's canonical output convention.
+collapsing antipodal duplicates in the solver's canonical output convention, and match the
+measured pure-MATLAB and MEX counts in Section~\ref{sec:fourway}. $^\dagger$\,\code{case4gs} returns
+\textbf{4} solutions under the corrected v5.2 default; the legacy \code{v55_compat}
+generator-row mapping returned 6.
 
 \section{Official Validation Summary}
 
-The official code{20260724_3x23} dataset records scheduler timing and
+The official \code{20260724_3x23} V5 dataset records scheduler timing and
 order-independent solution-set validation on the designated main job machine:
 
 \begin{center}
@@ -320,13 +384,17 @@ non-designated machines are not presented as release evidence.
 \midrule\endhead
 \code{README.md} & GitHub front page and quick start.\\
 \code{CHANGELOG.md} & Release history.\\
-\code{RELEASE_NOTES_V5.md} & GitHub release notes for this package.\\
-\code{RELEASE_CHECKLIST_V5.md} & Pre-upload package and release-asset checklist.\\
+\code{RELEASE_NOTES_V5.2.md} & GitHub release notes for this package.\\
+\code{RELEASE_CHECKLIST_V5.2.md} & Pre-upload package and release-asset checklist.\\
 \code{CITATION.cff} & Software citation metadata.\\
 \code{LICENSE}, \code{NOTICE} & License and third-party notices.\\
 \code{HEBCPF_Suite_Overview.tex/pdf} & This overview.\\
-\code{HEBCPF_MEX_v5/} & Compiled Windows x64 v5 solver.\\
-\code{HEBCPF_matlab_v5/} & Pure MATLAB v5 solver.\\
+\code{HEBCPF_MEX_v5.2/} & Compiled Windows x64 v5.2 solver + PDF user guide.\\
+\code{HEBCPF_matlab_v5.2/} & Pure MATLAB v5.2 solver + PDF user guide.\\
+\code{matlab_benchmark.tex/png} & Pure-vs-MEX benchmark fragment (Section~\ref{sec:fourway}).\\
+\code{MATLAB_BENCHMARK_V5.2.md} & GitHub-readable pure-vs-MEX comparison and interpretation.\\
+\code{MATLAB_BENCHMARK_METADATA_V5.2.json} & Machine-readable protocol, environment,
+summary statistics, and evidence limitations for that comparison.\\
 \code{SCHEDULER_BENCHMARK_v5.md} & Full three-policy benchmark report and interpretation.\\
 \code{BENCHMARK_METADATA_v5.json} & Official dataset identity, platform,
 scheduler parameters, and provenance.\\

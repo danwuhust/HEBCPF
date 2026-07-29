@@ -5,7 +5,7 @@ function results = test_checkpoint_policy_compatibility_v5()
 % test-only; production checkpoint cadence is unchanged.
 
 release_root = fileparts(mfilename('fullpath'));
-implementations = {'HEBCPF_MEX_v5','HEBCPF_matlab_v5'};
+implementations = {'HEBCPF_MEX_v5.2','HEBCPF_matlab_v5.2'};
 transitions = {'scan','bandit'; 'bandit','novelty'; 'novelty','scan'};
 rows = repmat(empty_row(),0,1);
 

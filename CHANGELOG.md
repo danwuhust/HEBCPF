@@ -2,6 +2,43 @@
 
 All notable changes to HEBCPF are documented here.
 
+## v5.2.0 - 2026.07.30
+
+- Released the MATLAB suite as `HEBCPF_MEX_v5.2` and
+  `HEBCPF_matlab_v5.2`; Python implementations are maintained separately in
+  the `pyHEBCPF` repository.
+- Replaced dense three-dimensional power-flow quadratic construction with a
+  sparse formulation in both the MEX and pure-MATLAB solvers.
+- Preserved the existing preprocessing function names and inputs so all serial,
+  `parfor`, `parfeval`, and benchmark drivers share one implementation.
+- Simplified `quadr_matrix` to return only the three outputs used by the suite:
+  `Ma`, `ra`, and `I`; bus-type counts remain internal loop variables.
+- Added MATPOWER internal-index normalization for non-consecutive external bus
+  numbers, including the bundled `case300` data.
+- Corrected PV injection and voltage targets to use bus-based online-generator
+  aggregation rather than generator-row ordering.
+- Added validation for missing generators, inconsistent voltage setpoints,
+  unsupported bus types, and invalid reference-bus counts.
+- Corrected quadratic construction for non-symmetric admittance matrices, such
+  as networks containing phase-shifting transformers.
+- Hardened the MEX `parfor` resume path by initializing missing accumulated
+  timing state from older compatible checkpoints.
+- Added a 20-case, three-repeat, 23-worker comparison of the pure-MATLAB and
+  MEX packages through 57 buses. Both packages completed 3,254 solutions; the
+  rounded summary gives a 1.95x aggregate wall-time ratio and a 1.59x
+  geometric-mean per-case wall-time factor in favor of MEX.
+- Published the V5.2 comparison table and machine-readable metadata while
+  explicitly recording that raw repeat records and residual vectors are not
+  available for this comparison.
+- Updated the suite overview, both user guides, citation metadata, release
+  notes, checklist, and third-party notices for a MATLAB-only release.
+
+## v5.1 - Unreleased development line
+
+- V5.1 was not published as a HEBCPF MATLAB release. Its sparse preprocessing
+  work is incorporated into v5.2.0. The Python ports developed alongside it
+  are released separately as `pyHEBCPF` v5.2.0.
+
 ## v5.0.0 - 2026.07.26
 
 V5.5 was an unreleased development package. V5 is documented directly against

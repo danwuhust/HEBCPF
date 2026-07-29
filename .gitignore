@@ -14,7 +14,9 @@ results_parfeval_summary.csv
 # Raw benchmark work directories stay local. Curated reports, summary CSV files,
 # plots, and metadata are tracked separately; portable raw ZIP files are release assets.
 benchmark_results_v5/
+benchmark_results_v5.2/
 scheduler_benchmark_v5/
+scheduler_benchmark_v5.2/
 # Optional historical v4 connectivity inputs are local-only and can be large.
 benchmark_results_20260715/
 tmp/
@@ -38,3 +40,18 @@ release_assets/*.mexw64
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Python environments and generated package artifacts
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+checkpoints/
+results/
+artifacts/
+tools/exported_mat/
